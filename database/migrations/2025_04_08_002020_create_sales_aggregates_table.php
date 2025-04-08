@@ -11,13 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('users', function (Blueprint $table) {
+        Schema::create('sales_aggregates', function (Blueprint $table) {
             $table->id();
-            $table->string('username', 40);
-            $table->string('email', 100)->unique();
-            $table->string('password', 255);
-            $table->enum('role', ['admin', 'kasir']);
-            $table->rememberToken();
+            $table->foreignId('product_id')->constrained();
+            $table->date('period');
+            $table->integer('total_sales');
             $table->timestamps();
         });
     }
@@ -27,6 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('users');
+        Schema::dropIfExists('sales_aggregates');
     }
 };
