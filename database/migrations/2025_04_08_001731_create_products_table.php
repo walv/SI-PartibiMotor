@@ -15,7 +15,8 @@ return new class extends Migration
             $table->id();
             $table->foreignId('category_id')->constrained();
             $table->string('name', 100);
-            $table->string('brand', 50);
+            $table->string('brand')->default('');
+            $table->text('description')->nullable();
             $table->decimal('cost_price', 10, 2);
             $table->decimal('selling_price', 10, 2);
             $table->integer('stock');
