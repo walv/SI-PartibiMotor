@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained();
             $table->string('invoice_number', 30);
-            $table->date('date');
+            $table->dateTime('date');
             $table->decimal('service_price', 10, 2);
             $table->decimal('total_price', 10, 2);
             $table->timestamps();
