@@ -24,6 +24,7 @@ class ProductSeeder extends Seeder
         $products = [
             [
                 'name' => 'Oli Yamalube 1L',
+                'brand' => 'Yamaha',
                 'description' => 'Oli mesin motor Yamaha 4-tak 1 Liter',
                 'category_id' => $oliCategoryId,
                 'cost_price' => 45000,
@@ -32,6 +33,7 @@ class ProductSeeder extends Seeder
             ],
             [
                 'name' => 'Oli Shell Advance AX7 1L',
+                'brand' => 'Shell',
                 'description' => 'Oli mesin motor 4-tak 1 Liter',
                 'category_id' => $oliCategoryId,
                 'cost_price' => 60000,
@@ -40,6 +42,7 @@ class ProductSeeder extends Seeder
             ],
             [
                 'name' => 'Busi NGK Iridium',
+                'brand' => null,
                 'description' => 'Busi motor NGK tipe Iridium',
                 'category_id' => $kelistrikanCategoryId,
                 'cost_price' => 85000,
@@ -48,6 +51,7 @@ class ProductSeeder extends Seeder
             ],
             [
                 'name' => 'Rantai Motor DID Gold',
+                'brand' => 'DID',
                 'description' => 'Rantai motor DID tipe Gold 428H',
                 'category_id' => $rangkaCategoryId,
                 'cost_price' => 180000,
@@ -56,6 +60,7 @@ class ProductSeeder extends Seeder
             ],
             [
                 'name' => 'Ban Luar Corsa R46',
+                'brand' => 'Corsa',
                 'description' => 'Ban luar motor Corsa ukuran 80/90-17',
                 'category_id' => $banCategoryId,
                 'cost_price' => 160000,
@@ -64,6 +69,7 @@ class ProductSeeder extends Seeder
             ],
             [
                 'name' => 'Kampas Rem Depan Yamaha',
+                'brand' => null,
                 'description' => 'Kampas rem depan untuk motor Yamaha',
                 'category_id' => $rangkaCategoryId,
                 'cost_price' => 35000,
@@ -72,6 +78,7 @@ class ProductSeeder extends Seeder
             ],
             [
                 'name' => 'Piston Kit Yamaha',
+                'brand' => 'Yamaha',
                 'description' => 'Piston kit untuk motor Yamaha',
                 'category_id' => $mesinCategoryId,
                 'cost_price' => 250000,
@@ -80,6 +87,7 @@ class ProductSeeder extends Seeder
             ],
             [
                 'name' => 'CDI BRT Racing',
+                'brand' => 'BRT',
                 'description' => 'CDI Racing untuk performa motor',
                 'category_id' => $kelistrikanCategoryId,
                 'cost_price' => 300000,
@@ -88,6 +96,7 @@ class ProductSeeder extends Seeder
             ],
             [
                 'name' => 'Filter Udara Racing',
+                'brand' => null,
                 'description' => 'Filter udara racing untuk performa motor',
                 'category_id' => $mesinCategoryId,
                 'cost_price' => 75000,
@@ -96,6 +105,7 @@ class ProductSeeder extends Seeder
             ],
             [
                 'name' => 'Ban Dalam IRC',
+                'brand' => 'IRC',
                 'description' => 'Ban dalam motor IRC ukuran 17',
                 'category_id' => $banCategoryId,
                 'cost_price' => 40000,
@@ -103,6 +113,7 @@ class ProductSeeder extends Seeder
                 'stock' => 20,
             ],
         ];
+        
 
         foreach ($products as $product) {
             Product::create($product);

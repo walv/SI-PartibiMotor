@@ -21,6 +21,26 @@
                 </div>
             @endif
 
+            {{-- // // FORM PENCARIAN DAN FILTER --}}
+            <form action="{{ route('purchases.index') }}" method="GET" class="row g-3 mb-4">
+                <div class="col-md-4">
+                    <input type="text" name="search" class="form-control" placeholder="Cari invoice atau supplier..." value="{{ request('search') }}">
+                </div>
+                <div class="col-md-3">
+                    <input type="date" name="date" class="form-control" value="{{ request('date') }}">
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-outline-primary w-100">
+                        <i class="fas fa-search"></i> Cari
+                    </button>
+                </div>
+                <div class="col-md-2">
+                    <a href="{{ route('purchases.index') }}" class="btn btn-outline-secondary w-100">
+                        Reset
+                    </a>
+                </div>
+            </form>
+
             <div class="table-responsive">
                 <table class="table table-bordered table-hover">
                     <thead class="table-light">
@@ -64,7 +84,8 @@
             </div>
 
             <div class="mt-3">
-                {{ $purchases->links() }}
+                {{ $purchases->appends(request()->query())->links() }}
+                {{-- // // Menjaga agar filter tetap aktif saat berpindah halaman --}}
             </div>
         </div>
     </div>

@@ -17,9 +17,9 @@ class CategoryController extends Controller
     {
         return view('categories.create');
     }
-
+//fungsi CRUD Kateogri
     public function store(Request $request)
-    {
+    { 
         $request->validate([
             'name' => 'required|unique:categories|max:255',
         ]);

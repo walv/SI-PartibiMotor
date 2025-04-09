@@ -17,7 +17,7 @@ return new class extends Migration
             $table->date('date');
             $table->enum('movement_type', ['in', 'out']);
             $table->integer('quantity');
-            $table->integer('reference_id');
+            $table->integer('reference_id')->default(0);
             $table->enum('reference_type', ['sale', 'purchase']);
             $table->integer('stock_before');
             $table->integer('stock_after');

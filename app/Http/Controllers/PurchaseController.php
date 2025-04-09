@@ -41,16 +41,16 @@ class PurchaseController extends Controller
         try {
             $totalPrice = 0;
 
-            // Create purchase
+            //  buat pembelian produk untuk stok barang
             $purchase = Purchase::create([
                 'invoice_number' => $request->invoice_number,
                 'date' => Carbon::now(),
                 'supplier_name' => $request->supplier_name,
-                'total_price' => 0, // Will update after calculating product prices
+                'total_price' => 0, 
                 'user_id' => auth()->id(),
             ]);
 
-            // Process each product
+            // proses tiap produk
             foreach ($request->products as $productData) {
                 if (!isset($productData['id']) || !isset($productData['quantity']) || !isset($productData['price']) || $productData['quantity'] <= 0) {
                     continue;
@@ -60,7 +60,7 @@ class PurchaseController extends Controller
                 $subtotal = $productData['price'] * $productData['quantity'];
                 $totalPrice += $subtotal;
 
-                // Create purchase detail
+                // detail pembelian produk
                 PurchaseDetail::create([
                     'purchase_id' => $purchase->id,
                     'product_id' => $product->id,
@@ -69,12 +69,12 @@ class PurchaseController extends Controller
                     'subtotal' => $subtotal,
                 ]);
 
-                // Update product stock and cost price
+                // update harga sesuai dengan pembelian terakhir
                 $product->stock += $productData['quantity'];
-                $product->cost_price = $productData['price']; // Update with latest purchase price
+                $product->cost_price = $productData['price']; 
                 $product->save();
 
-                // Record inventory movement
+                // merekam pergerakan stok 
                 InventoryMovement::create([
                     'date' => Carbon::now(),
                     'product_id' => $product->id,
@@ -84,7 +84,7 @@ class PurchaseController extends Controller
                 ]);
             }
 
-            // Update total price
+            // total harga
             $purchase->total_price = $totalPrice;
             $purchase->save();
 
@@ -109,14 +109,14 @@ class PurchaseController extends Controller
         DB::beginTransaction();
 
         try {
-            // Restore product stock
+            // Mengembalikan stok produk
             foreach ($purchase->details as $detail) {
                 $product = Product::find($detail->product_id);
                 if ($product) {
                     $product->stock -= $detail->quantity;
                     $product->save();
 
-                    // Record inventory movement
+                    // Catat pergerakan stok
                     InventoryMovement::create([
                         'date' => Carbon::now(),
                         'product_id' => $product->id,
@@ -127,10 +127,10 @@ class PurchaseController extends Controller
                 }
             }
 
-            // Delete purchase details
+            // hapus detail pembelian
             $purchase->details()->delete();
             
-            // Delete purchase
+            // hapus pembelian
             $purchase->delete();
 
             DB::commit();

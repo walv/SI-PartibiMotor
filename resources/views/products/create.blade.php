@@ -23,15 +23,14 @@
                     </div>
                     <div class="col-md-6">
                         <label for="brand" class="form-label">Brand</label>
-                        <input type="text" class="form-control @error('brand') is-invalid @enderror" id="brand" name="brand" value="{{ old('brand') }}" required>
+                        <input type="text" class="form-control @error('brand') is-invalid @enderror" id="brand" name="brand" value="{{ old('brand') }}">
                         @error('brand')
                         <div class="invalid-feedback">
                             {{ $message }}
                         </div>
                         @enderror
-                    </div>
+                      </div>                      
                 </div>
-
                 <div class="mb-3">
                     <label for="category_id" class="form-label">Kategori</label>
                     <select class="form-select @error('category_id') is-invalid @enderror" id="category_id" name="category_id" required>

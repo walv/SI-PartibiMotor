@@ -46,29 +46,38 @@
                         <h4 class="mb-0">@yield('title')</h4>
                         <div class="d-flex align-items-center">
                             <span class="text-muted me-3">{{ date('d F Y') }}</span>
-                            @if(auth()->check())
+                            @if (auth()->check())
                             <div class="dropdown">
-                                <a href="#" class="d-flex align-items-center text-decoration-none dropdown-toggle" id="dropdownUser1" data-bs-toggle="dropdown" aria-expanded="false">
+                                <a href="#" class="d-flex align-items-center text-decoration-none dropdown-toggle"
+                                   id="dropdownUser1" data-bs-toggle="dropdown" aria-expanded="false">
                                     <i class="fas fa-user-circle me-2"></i>
                                     <strong>{{ Auth::user()->name ?? 'User' }}</strong>
                                 </a>
                                 <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="dropdownUser1">
-                                    <li><a class="dropdown-item" href="{{ route('change.password') }}">Ganti Password</a></li>
+                                    @if (Route::has('change.password'))
+                                        <li>
+                                            <a class="dropdown-item" href="{{ route('change.password') }}">
+                                                <i class="fas fa-key me-2"></i> Ganti Password
+                                            </a>
+                                        </li>
+                                    @endif
+                        
                                     <li><hr class="dropdown-divider"></li>
-                                    <li>
-                                        <a class="dropdown-item" href="{{ route('logout') }}"
-                                           onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
-                                            Keluar
-                                        </a>
-                                        <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
-                                            @csrf
-                                        </form>
-                                    </li>
+                        
+                                    @if (Route::has('logout'))
+                                        <li>
+                                            <a class="dropdown-item" href="#"
+                                               onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+                                                <i class="fas fa-sign-out-alt me-2"></i> Keluar
+                                            </a>
+                                            <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
+                                                @csrf
+                                            </form>
+                                        </li>
+                                    @endif
                                 </ul>
                             </div>
-                            @else
-                            <a href="{{ route('login') }}" class="btn btn-primary btn-sm">Login</a>
-                            @endif
+                        @endif
                         </div>
                     </div>
                 </nav>

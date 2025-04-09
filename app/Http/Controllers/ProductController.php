@@ -12,22 +12,22 @@ class ProductController extends Controller
     {
         $query = Product::with('category');
         
-        // Filter by category
+        // // Filter berdasarkan kategori jika tersedia di request
         if ($request->has('category_id') && $request->category_id != '') {
             $query->where('category_id', $request->category_id);
         }
-        
-        // Search by name
+
+        // // Cari berdasarkan nama produk
         if ($request->has('search') && $request->search != '') {
             $query->where('name', 'like', '%' . $request->search . '%');
         }
-        
-        // Get products with pagination
+
+        // // Ambil data produk dengan pagination
         $products = $query->orderBy('name')->paginate(10);
-        
-        // Get all categories for filter
+
+        // // Ambil semua kategori untuk filter
         $categories = Category::orderBy('name')->get();
-        
+
         return view('products.index', compact('products', 'categories'));
     }
 
@@ -42,12 +42,19 @@ class ProductController extends Controller
         $request->validate([
             'name' => 'required|max:255',
             'category_id' => 'required|exists:categories,id',
-            'brand' => 'required|max:255',
+            'brand' => 'nullable|max:255',
             'description' => 'nullable|string',
             'cost_price' => 'required|numeric|min:0',
             'selling_price' => 'required|numeric|min:0',
             'stock' => 'required|integer|min:0',
         ]);
+
+        // // Validasi tambahan: harga jual tidak boleh lebih kecil dari harga beli
+        if ($request->cost_price > $request->selling_price) {
+            return back()
+                ->withErrors(['selling_price' => 'Harga jual harus lebih besar atau sama dengan harga beli.'])
+                ->withInput();
+        }
 
         Product::create($request->all());
 
@@ -71,12 +78,19 @@ class ProductController extends Controller
         $request->validate([
             'name' => 'required|max:255',
             'category_id' => 'required|exists:categories,id',
-            'brand' => 'required|max:255',
+            'brand' => 'nullable|max:255',
             'description' => 'nullable|string',
             'cost_price' => 'required|numeric|min:0',
             'selling_price' => 'required|numeric|min:0',
             'stock' => 'required|integer|min:0',
         ]);
+
+        // // Validasi tambahan: harga jual tidak boleh lebih kecil dari harga beli
+        if ($request->cost_price > $request->selling_price) {
+            return back()
+                ->withErrors(['selling_price' => 'Harga jual harus lebih besar atau sama dengan harga beli.'])
+                ->withInput();
+        }
 
         $product->update($request->all());
 

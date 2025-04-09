@@ -1,0 +1,121 @@
+[33mcommit 8a38d87bb1e716caccd1e7420e1563df7c143f8a[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m
+Author: walv <frans.waldes05@gmail.com>
+Date:   Tue Apr 8 22:38:29 2025 +0700
+
+    penambahan database dan perbaikan database untuk produk,stok,laporan,dan peramalan
+
+ ...4_10_12_100000_create_password_resets_table.php | 32 [32m++++++++++++++++++++[m
+ .../2025_04_08_001731_create_products_table.php    |  3 [32m+[m[31m-[m
+ .../2025_04_08_023825_create_purchases_table.php   | 32 [32m++++++++++++++++++++[m
+ ..._04_08_023910_create_purchase_details_table.php | 32 [32m++++++++++++++++++++[m
+ ..._08_024121_create_financial_summaries_table.php | 31 [32m+++++++++++++++++++[m
+ ...08_024143_create_forecast_evaluations_table.php | 35 [32m++++++++++++++++++++++[m
+ ...08_024333_create_forecast_comparisons_table.php | 34 [32m+++++++++++++++++++++[m
+ ...025_04_08_024414_create_sales_reports_table.php | 34 [32m+++++++++++++++++++++[m
+ ..._04_08_024520_create_purchase_reports_table.php | 34 [32m+++++++++++++++++++++[m
+ ..._08_024541_create_inventory_movements_table.php | 35 [32m++++++++++++++++++++++[m
+ 10 files changed, 301 insertions(+), 1 deletion(-)
+
+[33mcommit cbd6bbbae2e73818f09a1fd6a7810f05cb84de48[m[33m ([m[1;31morigin/main[m[33m)[m
+Author: walv <frans.waldes05@gmail.com>
+Date:   Tue Apr 8 08:06:45 2025 +0700
+
+    penambahan struktur database part 1
+
+ .../2014_10_12_000000_create_users_table.php       |  8 [32m++[m[31m---[m
+ .../2025_04_08_001713_create_categories_table.php  | 28 [32m++++++++++++++++[m
+ .../2025_04_08_001731_create_products_table.php    | 33 [32m+++++++++++++++++++[m
+ .../2025_04_08_001856_create_sales_table.php       | 32 [32m+++++++++++++++++++[m
+ ...2025_04_08_001915_create_sale_details_table.php | 32 [32m+++++++++++++++++++[m
+ ..._04_08_002020_create_sales_aggregates_table.php | 30 [32m++++++++++++++++++[m
+ ...2025_04_08_002043_create_forecast_ses_table.php | 32 [32m+++++++++++++++++++[m
+ ...2025_04_08_002139_create_forecast_des_table.php | 35 [32m++++++++++++++++++++[m
+ ...2025_04_08_002158_create_forecast_tes_table.php | 37 [32m++++++++++++++++++++++[m
+ 9 files changed, 263 insertions(+), 4 deletions(-)
+
+[33mcommit c4e5f02d3aeba77a0b9fcb0acf75e1f06d653958[m
+Author: walv <frans.waldes05@gmail.com>
+Date:   Tue Apr 8 07:09:16 2025 +0700
+
+    Commit pertama: inisialisasi proyek Laravel Sistem Informasi Partibi Motor
+
+ .editorconfig                                      |   18 [32m+[m
+ .env.example                                       |   59 [32m+[m
+ .gitattributes                                     |   11 [32m+[m
+ .gitignore                                         |   19 [32m+[m
+ README.md                                          |   66 [32m+[m
+ app/Console/Kernel.php                             |   27 [32m+[m
+ app/Exceptions/Handler.php                         |   30 [32m+[m
+ app/Http/Controllers/Controller.php                |   12 [32m+[m
+ app/Http/Kernel.php                                |   68 [32m+[m
+ app/Http/Middleware/Authenticate.php               |   17 [32m+[m
+ app/Http/Middleware/EncryptCookies.php             |   17 [32m+[m
+ .../PreventRequestsDuringMaintenance.php           |   17 [32m+[m
+ app/Http/Middleware/RedirectIfAuthenticated.php    |   30 [32m+[m
+ app/Http/Middleware/TrimStrings.php                |   19 [32m+[m
+ app/Http/Middleware/TrustHosts.php                 |   20 [32m+[m
+ app/Http/Middleware/TrustProxies.php               |   28 [32m+[m
+ app/Http/Middleware/ValidateSignature.php          |   22 [32m+[m
+ app/Http/Middleware/VerifyCsrfToken.php            |   17 [32m+[m
+ app/Models/User.php                                |   45 [32m+[m
+ app/Providers/AppServiceProvider.php               |   24 [32m+[m
+ app/Providers/AuthServiceProvider.php              |   26 [32m+[m
+ app/Providers/BroadcastServiceProvider.php         |   19 [32m+[m
+ app/Providers/EventServiceProvider.php             |   38 [32m+[m
+ app/Providers/RouteServiceProvider.php             |   40 [32m+[m
+ artisan                                            |   53 [32m+[m
+ bootstrap/app.php                                  |   55 [32m+[m
+ bootstrap/cache/.gitignore                         |    2 [32m+[m
+ composer.json                                      |   66 [32m+[m
+ composer.lock                                      | 8125 [32m++++++++++++++++++++[m
+ config/app.php                                     |  188 [32m+[m
+ config/auth.php                                    |  115 [32m+[m
+ config/broadcasting.php                            |   71 [32m+[m
+ config/cache.php                                   |  111 [32m+[m
+ config/cors.php                                    |   34 [32m+[m
+ config/database.php                                |  151 [32m+[m
+ config/filesystems.php                             |   76 [32m+[m
+ config/hashing.php                                 |   54 [32m+[m
+ config/logging.php                                 |  131 [32m+[m
+ config/mail.php                                    |  134 [32m+[m
+ config/queue.php                                   |  109 [32m+[m
+ config/sanctum.php                                 |   83 [32m+[m
+ config/services.php                                |   34 [32m+[m
+ config/session.php                                 |  214 [32m+[m
+ config/view.php                                    |   36 [32m+[m
+ database/.gitignore                                |    1 [32m+[m
+ database/factories/UserFactory.php                 |   44 [32m+[m
+ .../2014_10_12_000000_create_users_table.php       |   32 [32m+[m
+ ...2_100000_create_password_reset_tokens_table.php |   28 [32m+[m
+ .../2019_08_19_000000_create_failed_jobs_table.php |   32 [32m+[m
+ ..._000001_create_personal_access_tokens_table.php |   33 [32m+[m
+ database/seeders/DatabaseSeeder.php                |   22 [32m+[m
+ package.json                                       |   13 [32m+[m
+ phpunit.xml                                        |   32 [32m+[m
+ public/.htaccess                                   |   21 [32m+[m
+ public/favicon.ico                                 |    0
+ public/index.php                                   |   55 [32m+[m
+ public/robots.txt                                  |    2 [32m+[m
+ resources/css/app.css                              |    0
+ resources/js/app.js                                |    1 [32m+[m
+ resources/js/bootstrap.js                          |   32 [32m+[m
+ resources/views/welcome.blade.php                  |  133 [32m+[m
+ routes/api.php                                     |   19 [32m+[m
+ routes/channels.php                                |   18 [32m+[m
+ routes/console.php                                 |   19 [32m+[m
+ routes/web.php                                     |   18 [32m+[m
+ storage/app/.gitignore                             |    3 [32m+[m
+ storage/app/public/.gitignore                      |    2 [32m+[m
+ storage/framework/.gitignore                       |    9 [32m+[m
+ storage/framework/cache/.gitignore                 |    3 [32m+[m
+ storage/framework/cache/data/.gitignore            |    2 [32m+[m
+ storage/framework/sessions/.gitignore              |    2 [32m+[m
+ storage/framework/testing/.gitignore               |    2 [32m+[m
+ storage/framework/views/.gitignore                 |    2 [32m+[m
+ storage/logs/.gitignore                            |    2 [32m+[m
+ tests/CreatesApplication.php                       |   21 [32m+[m
+ tests/Feature/ExampleTest.php                      |   19 [32m+[m
+ tests/TestCase.php                                 |   10 [32m+[m
+ tests/Unit/ExampleTest.php                         |   16 [32m+[m
+ vite.config.js                                     |   11 [32m+[m
+ 79 files changed, 11190 insertions(+)
