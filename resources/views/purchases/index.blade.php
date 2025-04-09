@@ -1,6 +1,6 @@
-@extends('layouts.app')
+@extends('layouts.app') 
 
-@section('title', 'Daftar Pembelian')
+@section('title', 'Daftar Pembelian') 
 
 @section('content')
 <div class="container-fluid">
@@ -14,36 +14,28 @@
             </div>
         </div>
         <div class="card-body">
-            @if (session('success'))
-                <div class="alert alert-success alert-dismissible fade show" role="alert">
-                    {{ session('success') }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-            @endif
-
-            {{-- // // FORM PENCARIAN DAN FILTER --}}
-            <form action="{{ route('purchases.index') }}" method="GET" class="row g-3 mb-4">
-                <div class="col-md-4">
-                    <input type="text" name="search" class="form-control" placeholder="Cari invoice atau supplier..." value="{{ request('search') }}">
-                </div>
-                <div class="col-md-3">
-                    <input type="date" name="date" class="form-control" value="{{ request('date') }}">
-                </div>
-                <div class="col-md-2">
-                    <button type="submit" class="btn btn-outline-primary w-100">
-                        <i class="fas fa-search"></i> Cari
-                    </button>
-                </div>
-                <div class="col-md-2">
-                    <a href="{{ route('purchases.index') }}" class="btn btn-outline-secondary w-100">
-                        Reset
-                    </a>
+            <form action="{{ route('purchases.index') }}" method="GET" class="mb-4">
+                <div class="row">
+                    <div class="col-md-5">
+                        <input type="text" name="search" class="form-control" placeholder="Cari invoice atau supplier..." value="{{ request('search') }}">
+                    </div>
+                    <div class="col-md-3">
+                        <input type="date" name="date" class="form-control" value="{{ request('date') }}">
+                    </div>
+                    <div class="col-md-2">
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fas fa-search"></i> Cari
+                        </button>
+                    </div>
+                    <div class="col-md-2">
+                        <a href="{{ route('purchases.index') }}" class="btn btn-secondary w-100">Reset</a>
+                    </div>
                 </div>
             </form>
-
+            
             <div class="table-responsive">
-                <table class="table table-bordered table-hover">
-                    <thead class="table-light">
+                <table class="table table-bordered table-striped">
+                    <thead>
                         <tr>
                             <th>Invoice</th>
                             <th>Tanggal</th>
@@ -54,21 +46,21 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @forelse ($purchases as $purchase)
+                        @forelse($purchases as $purchase)
                         <tr>
                             <td>{{ $purchase->invoice_number }}</td>
                             <td>{{ date('d/m/Y H:i', strtotime($purchase->date)) }}</td>
                             <td>{{ $purchase->supplier_name }}</td>
                             <td>Rp {{ number_format($purchase->total_price, 0, ',', '.') }}</td>
-                            <td>{{ $purchase->user->username }}</td>
+                            <td>{{ $purchase->user->name }}</td>
                             <td>
-                                <a href="{{ route('purchases.show', $purchase->id) }}" class="btn btn-sm btn-info">
+                                <a href="{{ route('purchases.show', $purchase->id) }}" class="btn btn-info btn-sm">
                                     <i class="fas fa-eye"></i>
                                 </a>
                                 <form action="{{ route('purchases.destroy', $purchase->id) }}" method="POST" class="d-inline">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Apakah Anda yakin ingin menghapus transaksi ini? Stok produk akan dikurangi.')">
+                                    <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Apakah Anda yakin ingin menghapus pembelian ini?')">
                                         <i class="fas fa-trash"></i>
                                     </button>
                                 </form>
@@ -82,11 +74,12 @@
                     </tbody>
                 </table>
             </div>
-
+            
+            @if($purchases->count() > 0)
             <div class="mt-3">
                 {{ $purchases->appends(request()->query())->links() }}
-                {{-- // // Menjaga agar filter tetap aktif saat berpindah halaman --}}
             </div>
+            @endif
         </div>
     </div>
 </div>

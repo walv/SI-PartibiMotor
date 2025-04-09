@@ -12,14 +12,14 @@ return new class extends Migration
     public function up(): void
 {
     Schema::table('products', function (Blueprint $table) {
-        $table->string('brand')->nullable()->change();
+        $table->string('brand', 255)->nullable()->change();
     });
 }
 
 public function down(): void
 {
     Schema::table('products', function (Blueprint $table) {
-        $table->string('brand')->nullable(false)->change();
+        $table->string('brand', 255)->nullable(false)->change();
     });
 }
 };
