@@ -99,11 +99,9 @@ Route::middleware(['auth'])->group(function () {
     // Peramalan / Forecast
     // ========================
     Route::get('/forecast', [ForecastController::class, 'index'])->name('forecast.index');
-    Route::get('/forecast/ses', [ForecastController::class, 'ses'])->name('forecast.ses');
-    Route::get('/forecast/des', [ForecastController::class, 'des'])->name('forecast.des');
-    Route::get('/forecast/tes', [ForecastController::class, 'tes'])->name('forecast.tes');
+    Route::get('/forecast/ses', [ForecastController::class, 'ses'])->name('forecast.ses'); // Untuk SES
     Route::post('/forecast/calculate', [ForecastController::class, 'calculate'])->name('forecast.calculate');
-    Route::get('/forecast/comparison', [ForecastController::class, 'comparison'])->name('forecast.comparison');
+    Route::get('/forecast/result', [ForecastController::class, 'result'])->name('forecast.result'); // Jika diperlukan
 });
 
 // ========================

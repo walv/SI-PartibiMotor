@@ -14,19 +14,23 @@ class UserSeeder extends Seeder
     public function run(): void
     {
         // Admin user
-        User::create([
-            'username' => 'admin',
-            'email' => 'admin@partibimotor.com',
-            'password' => Hash::make('admin123'),
-            'role' => 'admin',
-        ]);
+        if (!User::where('email', 'admin@partibimotor.com')->exists()) {
+            User::create([
+                'username' => 'admin',
+                'email' => 'admin@partibimotor.com',
+                'password' => Hash::make('admin123'),
+                'role' => 'admin',
+            ]);
+        }
 
         // Cashier user
-        User::create([
-            'username' => 'kasir',
-            'email' => 'kasir@partibimotor.com',
-            'password' => Hash::make('kasir123'),
-            'role' => 'kasir',
-        ]);
+        if (!User::where('email', 'kasir@partibimotor.com')->exists()) {
+            User::create([
+                'username' => 'kasir',
+                'email' => 'kasir@partibimotor.com',
+                'password' => Hash::make('kasir123'),
+                'role' => 'kasir',
+            ]);
+        }
     }
 }

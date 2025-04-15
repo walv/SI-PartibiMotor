@@ -13,11 +13,17 @@ class ForecastSes extends Model
 
     protected $fillable = [
         'product_id',
-        'year',
-        'month',
+        'period',    // Menambahkan period di fillable
         'actual',
         'forecast',
         'alpha'
+    ];
+
+    // Menambahkan properti $dates untuk kolom datetime
+    protected $dates = [
+        'period',        // Kolom period yang merupakan tanggal
+        'created_at',    // Kolom created_at
+        'updated_at',    // Kolom updated_at
     ];
 
     public function product()

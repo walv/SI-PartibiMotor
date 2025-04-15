@@ -21,6 +21,13 @@ class InventoryMovement extends Model
         'stock_after',
     ];
 
+    // Menambahkan properti $dates untuk kolom datetime
+    protected $dates = [
+        'date',          // Kolom date yang merupakan tanggal
+        'created_at',    // Kolom created_at
+        'updated_at',    // Kolom updated_at
+    ];
+
     /**
      * Relasi ke model Product.
      * Setiap InventoryMovement terkait dengan satu produk.

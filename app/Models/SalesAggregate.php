@@ -11,10 +11,16 @@ class SalesAggregate extends Model
 
     protected $fillable = [
         'product_id',
-        'year',
-        'month',
-        'quantity',
-        'total_price'
+        'period',      // Menyimpan periode sebagai string dalam format Y-m
+        'total_sales',
+        'total_price',
+    ];
+
+    // Menambahkan properti $dates untuk kolom datetime
+    protected $dates = [
+        'period',        // Kolom period yang merupakan tanggal
+        'created_at',    // Kolom created_at
+        'updated_at',    // Kolom updated_at
     ];
 
     public function product()

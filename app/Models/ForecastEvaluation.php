@@ -19,8 +19,15 @@ class ForecastEvaluation extends Model
         'date'
     ];
 
+    // Menambahkan properti $dates untuk kolom datetime lainnya
+    protected $dates = [
+        'date',          // Kolom date yang merupakan tanggal
+        'created_at',    // Kolom created_at
+        'updated_at',    // Kolom updated_at
+    ];
+
     protected $casts = [
-        'date' => 'datetime'
+        'date' => 'datetime'  // Mengonversi kolom date menjadi objek datetime
     ];
 
     public function product()

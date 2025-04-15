@@ -14,8 +14,9 @@ return new class extends Migration
         Schema::create('sales_aggregates', function (Blueprint $table) {
             $table->id();
             $table->foreignId('product_id')->constrained();
-            $table->date('period');
-            $table->integer('total_sales');
+            $table->string('period');  // Mengubah tipe data menjadi string
+            $table->decimal('total_sales', 10, 2)->default(0);
+            $table->decimal('total_price', 10, 2)->default(0);
             $table->timestamps();
         });
     }

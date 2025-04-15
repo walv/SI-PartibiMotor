@@ -29,7 +29,8 @@
                     <div class="col-md-6">
                         <label for="customer_name" class="form-label">Nama Pelanggan</label>
                         <input type="text" class="form-control @error('customer_name') is-invalid @enderror" 
-                               id="customer_name" name="customer_name" value="{{ old('customer_name') }}" required>
+                               id="customer_name" name="customer_name" value="{{ old('customer_name', 'Pelanggan') }}"
+                               placeholder="Kosongkan untuk pelanggan umum">
                         @error('customer_name')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror

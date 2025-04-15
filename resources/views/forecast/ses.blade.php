@@ -1,86 +1,133 @@
 @extends('layouts.app')
 
-@section('title', 'Peramalan - Single Exponential Smoothing')
-
 @section('content')
-<div class="container-fluid">
+<div class="container">
     <div class="card">
         <div class="card-header">
-            <div class="d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">Single Exponential Smoothing (SES)</h5>
-                <a href="{{ route('forecast.index') }}" class="btn btn-secondary">
-                    <i class="fas fa-arrow-left"></i> Kembali
-                </a>
-            </div>
+            <h5>Single Exponential Smoothing (SES)</h5>
         </div>
         <div class="card-body">
-            @if (session('error'))
-                <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                    {{ session('error') }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-            @endif
-
             <form action="{{ route('forecast.calculate') }}" method="POST">
                 @csrf
                 <input type="hidden" name="method" value="ses">
                 
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label for="product_id" class="form-label">Pilih Produk</label>
-                        <select class="form-select @error('product_id') is-invalid @enderror" id="product_id" name="product_id" required>
-                            <option value="">-- Pilih Produk --</option>
-                            @foreach($products as $product)
-                                <option value="{{ $product->id }}" {{ old('product_id') == $product->id ? 'selected' : '' }}>
-                                    {{ $product->name }} ({{ $product->brand }})
-                                </option>
-                            @endforeach
-                        </select>
-                        @error('product_id')
-                            <div class="invalid-feedback">{{ $message }}</div>
-                        @enderror
-                    </div>
-                    <div class="col-md-6">
-                        <label for="period" class="form-label">Jumlah Periode Data Historis</label>
-                        <input type="number" class="form-control @error('period') is-invalid @enderror" id="period" name="period" value="{{ old('period', 12) }}" min="3" max="36" required>
-                        @error('period')
-                            <div class="invalid-feedback">{{ $message }}</div>
-                        @enderror
-                        <small class="text-muted">Jumlah bulan data historis yang akan digunakan (3-36 bulan)</small>
-                    </div>
+                <div class="form-group">
+                    <label>Pilih Produk</label>
+                    <select name="product_id" class="form-control" required>
+                        @foreach($products as $product)
+                        <option value="{{ $product->id }}">{{ $product->name }}</option>
+                        @endforeach
+                    </select>
                 </div>
                 
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label for="alpha" class="form-label">Nilai Alpha (α)</label>
-                        <input type="number" class="form-control @error('alpha') is-invalid @enderror" id="alpha" name="alpha" value="{{ old('alpha', 0.2) }}" min="0" max="1" step="0.1" required>
-                        @error('alpha')
-                            <div class="invalid-feedback">{{ $message }}</div>
-                        @enderror
-                        <small class="text-muted">Parameter penghalusan (0-1). Nilai yang lebih tinggi memberikan bobot lebih pada data terbaru.</small>
-                    </div>
-                    <div class="col-md-6">
-                        <label for="forecast_periods" class="form-label">Jumlah Periode Peramalan</label>
-                        <input type="number" class="form-control @error('forecast_periods') is-invalid @enderror" id="forecast_periods" name="forecast_periods" value="{{ old('forecast_periods', 3) }}" min="1" max="12" required>
-                        @error('forecast_periods')
-                            <div class="invalid-feedback">{{ $message }}</div>
-                        @enderror
-                        <small class="text-muted">Jumlah bulan yang akan diramalkan (1-12 bulan)</small>
-                    </div>
+                <!-- Penjelasan Alpha -->
+                <div class="form-group">
+                    <label>Alpha (α)</label>
+                    <input type="number" name="alpha" class="form-control" 
+                           min="0.01" max="0.99" step="0.01" value="0.3" required>
+                    <small class="form-text text-muted">
+                        Alpha (α) mengontrol seberapa banyak data terbaru mempengaruhi peramalan. 
+                        Pilih nilai yang sesuai dengan pola penjualan Anda:
+                    </small>
+                    <ul class="mt-2">
+                        <li><strong>Alpha rendah (0.1 - 0.3)</strong> - Untuk penjualan yang <strong>stabil</strong> atau tidak banyak fluktuasi.</li>
+                        <li><strong>Alpha sedang (0.4 - 0.6)</strong> - Untuk penjualan yang <strong>fluktuatif</strong> namun tidak terlalu drastis.</li>
+                        <li><strong>Alpha tinggi (0.7 - 0.9)</strong> - Untuk penjualan yang sangat <strong>fluktuatif</strong> atau sering mengalami perubahan besar.</li>
+                    </ul>
                 </div>
                 
-                <div class="alert alert-info">
-                    <h6><i class="fas fa-info-circle me-2"></i> Tentang Single Exponential Smoothing</h6>
-                    <p class="mb-0">Metode ini memberikan bobot lebih pada data terbaru dan cocok untuk data tanpa tren atau pola musiman. Parameter alpha (α) menentukan seberapa cepat model merespon perubahan dalam data.</p>
+                <div class="form-group">
+                    <label>Jumlah Periode Forecast</label>
+                    <input type="number" name="forecast_periods" class="form-control" 
+                           min="1" max="12" value="3" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="start_period">Pilih Periode Awal</label>
+                    <input type="month" name="start_period" id="start_period" class="form-control" required>
+                    <small class="form-text text-muted">Klik ikon kalender di samping untuk memilih bulan dan tahun</small>
                 </div>
                 
-                <div class="text-end">
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-calculator me-2"></i> Hitung Peramalan
-                    </button>
-                </div>
+                <button type="submit" class="btn btn-primary">Hitung Peramalan</button>
             </form>
+
+            @if(isset($result))
+            <div class="mt-4">
+                <h5>Hasil Peramalan</h5>
+                <canvas id="forecastChart"></canvas>
+                
+                <table class="table table-bordered mt-3">
+                    <thead>
+                        <tr>
+                            <th>Periode</th>
+                            <th>Data Aktual</th>
+                            <th>Hasil Peramalan</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($result['actual'] as $index => $actual)
+                        <tr>
+                            <td>{{ $index + 1 }}</td>
+                            <td>{{ $actual }}</td>
+                            <td>{{ number_format($result['fitted'][$index], 2) }}</td>
+                        </tr>
+                        @endforeach
+                        @foreach($result['forecast'] as $index => $fc)
+                        <tr>
+                            <td>Peramalan {{ $index + 1 }}</td>
+                            <td>-</td>
+                            <td>{{ number_format($fc, 2) }}</td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+
+                <!-- Menampilkan MAPE, MAE, dan RMSE -->
+                <div class="mt-4">
+                    <h6>Metrik Evaluasi:</h6>
+                    <ul>
+                        <li><strong>MAPE:</strong> {{ number_format($metrics['mape'], 2) }}%</li>
+                        <li><strong>MAE:</strong> {{ number_format($metrics['mae'], 2) }}</li>
+                        <li><strong>RMSE:</strong> {{ number_format($metrics['rmse'], 2) }}</li>
+                    </ul>
+                </div>
+            </div>
+            @endif
         </div>
     </div>
 </div>
+
+@if ($errors->any())
+<div class="alert alert-danger mt-3">
+    <ul class="mb-0">
+        @foreach ($errors->all() as $error)
+            <li>{{ $error }}</li>
+        @endforeach
+    </ul>
+</div>
+@endif
+
+@if(isset($chartData))
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const ctx = document.getElementById('forecastChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: @json($chartData['labels']),
+            datasets: [{
+                label: 'Data Aktual',
+                data: @json($chartData['actual']),
+                borderColor: 'rgb(75, 192, 192)',
+                tension: 0.1
+            }, {
+                label: 'Hasil Peramalan',
+                data: @json($chartData['forecast']),
+                borderColor: 'rgb(255, 99, 132)',
+                tension: 0.1
+            }]
+        }
+    });
+</script>
+@endif
 @endsection

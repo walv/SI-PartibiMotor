@@ -3,78 +3,33 @@
 @section('title', 'Peramalan Penjualan')
 
 @section('content')
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-md-12">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">Peramalan Penjualan</h5>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-4 mb-4">
-                            <div class="card h-100">
-                                <div class="card-body text-center">
-                                    <h5 class="card-title">Single Exponential Smoothing</h5>
-                                    <p class="card-text">Metode peramalan untuk data tanpa tren dan pola musiman.</p>
-                                    <a href="{{ route('forecast.ses') }}" class="btn btn-primary">Pilih Metode Ini</a>
-                                </div>
-                                <div class="card-footer bg-light">
-                                    <small class="text-muted">Cocok untuk data dengan pola stasioner</small>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-4 mb-4">
-                            <div class="card h-100">
-                                <div class="card-body text-center">
-                                    <h5 class="card-title">Double Exponential Smoothing</h5>
-                                    <p class="card-text">Metode peramalan untuk data dengan tren tetapi tanpa pola musiman.</p>
-                                    <a href="{{ route('forecast.des') }}" class="btn btn-primary">Pilih Metode Ini</a>
-                                </div>
-                                <div class="card-footer bg-light">
-                                    <small class="text-muted">Cocok untuk data dengan pola tren naik/turun</small>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-4 mb-4">
-                            <div class="card h-100">
-                                <div class="card-body text-center">
-                                    <h5 class="card-title">Triple Exponential Smoothing</h5>
-                                    <p class="card-text">Metode peramalan untuk data dengan tren dan pola musiman.</p>
-                                    <a href="{{ route('forecast.tes') }}" class="btn btn-primary">Pilih Metode Ini</a>
-                                </div>
-                                <div class="card-footer bg-light">
-                                    <small class="text-muted">Cocok untuk data dengan pola musiman bulanan/tahunan</small>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+<div class="container">
+    <h5 class="text-center mt-5">Peramalan Penjualan dengan <strong>Single Exponential Smoothing (SES)</strong></h5>
+    
+    <!-- Penjelasan tentang SES -->
+    <div class="alert alert-info mt-4">
+        <h6><strong>Apa itu Single Exponential Smoothing (SES)?</strong></h6>
+        <p>Single Exponential Smoothing (SES) adalah metode statistik yang digunakan untuk meramalkan nilai masa depan berdasarkan data historis. Metode ini memperhitungkan nilai terbaru lebih banyak daripada nilai-nilai sebelumnya, membuatnya lebih responsif terhadap perubahan data terbaru.</p>
+        <p>Metode ini sangat berguna untuk peramalan penjualan barangg dipengaruhi oleh pola yang sudah ada sebelumnya guna menentukan stok dibulan berikutnya. Namun, perlu diingat bahwa hasil peramalan menggunakan SES dapat dipengaruhi oleh **parameter alpha (α)** yang dipilih, yang mengontrol seberapa besar pengaruh data terbaru terhadap peramalan.</p>
+    </div>
 
-                    <div class="mt-4">
-                        <div class="card">
-                            <div class="card-header bg-light">
-                                <h6 class="mb-0">Perbandingan Metode Peramalan</h6>
-                            </div>
-                            <div class="card-body">
-                                <p>Lihat perbandingan akurasi dari berbagai metode peramalan untuk memilih metode terbaik.</p>
-                                <a href="{{ route('forecast.comparison') }}" class="btn btn-success">
-                                    <i class="fas fa-chart-line me-2"></i> Lihat Perbandingan
-                                </a>
-                            </div>
-                        </div>
-                    </div>
+    <!-- Peringatan tentang Ketidakakuratan Peramalan -->
+    <div class="alert alert-warning mt-3">
+        <h6><strong>Peringatan!</strong></h6>
+        <p>Peramalan yang dilakukan menggunakan metode <strong>SES</strong> tidak selalu 100% akurat. </p>
+        <p>Pastikan untuk menggunakan peramalan sebagai alat pendukung pengambilan keputusan, bukan satu-satunya acuan.</p>
+    </div>
 
-                    <div class="alert alert-info mt-4">
-                        <h6><i class="fas fa-info-circle me-2"></i> Panduan Memilih Metode Peramalan</h6>
-                        <ul class="mb-0">
-                            <li><strong>Single Exponential Smoothing (SES)</strong> - Gunakan jika data penjualan relatif stabil tanpa tren atau pola musiman yang jelas.</li>
-                            <li><strong>Double Exponential Smoothing (DES)</strong> - Gunakan jika data penjualan menunjukkan tren naik atau turun yang konsisten.</li>
-                            <li><strong>Triple Exponential Smoothing (TES)</strong> - Gunakan jika data penjualan menunjukkan pola musiman (misalnya penjualan meningkat pada bulan-bulan tertentu setiap tahun).</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        </div>
+    <!-- Tombol untuk Memulai Peramalan -->
+    <div class="text-center mt-4">
+        <a href="{{ route('forecast.ses') }}" class="btn btn-primary btn-lg">Mulai Peramalan</a>
+    </div>
+
+    <!-- Petunjuk Tambahan -->
+    <div class="mt-4">
+        <h6><strong>Bagaimana Memilih Nilai Alpha?</strong></h6>
+        <p><strong>Alpha (α)</strong> adalah parameter penghalusan yang menentukan seberapa banyak data terbaru mempengaruhi hasil peramalan. Jika α terlalu rendah, peramalan akan lebih stabil dan kurang responsif terhadap perubahan data terkini. Sebaliknya, jika α terlalu tinggi, peramalan akan sangat sensitif terhadap data terbaru dan bisa berfluktuasi tajam.</p>
+        <p>Cobalah beberapa nilai α seperti <strong>0.2 hingga 0.5</strong> untuk melihat bagaimana nilai tersebut mempengaruhi hasil peramalan. Nilai yang tepat akan membantu mendapatkan hasil peramalan yang lebih akurat.</p>
     </div>
 </div>
 @endsection

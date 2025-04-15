@@ -9,17 +9,20 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-    public function up()
+    public function up(): void
     {
         Schema::table('sales', function (Blueprint $table) {
-            $table->string('customer_name')->nullable(); // Menambahkan kolom customer_name
+            $table->date('sale_date')->nullable(); // Menambahkan kolom sale_date
         });
     }
-    
-    public function down()
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
     {
         Schema::table('sales', function (Blueprint $table) {
-            $table->dropColumn('customer_name'); // Menghapus kolom customer_name saat rollback
+            $table->dropColumn('sale_date'); // Menghapus kolom sale_date
         });
     }
 };

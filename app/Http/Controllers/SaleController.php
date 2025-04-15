@@ -6,6 +6,7 @@ use App\Models\Product;
 use App\Models\Sale;
 use App\Models\SaleDetail;
 use App\Models\InventoryMovement;
+use App\Models\SalesAggregate;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -14,10 +15,9 @@ class SaleController extends Controller
 {
     public function index(Request $request)
     {
-        // // Tambahkan fitur pencarian
         $query = Sale::with('user');
-        
-        // // Filter berdasarkan invoice atau customer
+
+        // Pencarian berdasarkan invoice atau customer
         if ($request->has('search') && !empty($request->search)) {
             $search = $request->search;
             $query->where(function($q) use ($search) {
@@ -25,13 +25,13 @@ class SaleController extends Controller
                   ->orWhere('customer_name', 'like', "%{$search}%");
             });
         }
-        
-        // // Filter berdasarkan tanggal
+
+        // Filter berdasarkan tanggal
         if ($request->has('date') && !empty($request->date)) {
             $date = $request->date;
             $query->whereDate('date', $date);
         }
-        
+
         $sales = $query->orderBy('date', 'desc')->paginate(10);
         return view('sales.index', compact('sales'));
     }
@@ -45,47 +45,42 @@ class SaleController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
-            'invoice_number' => 'required|unique:sales',
-            'customer_name' => 'required|string|max:255',
-            'service_price' => 'nullable|numeric|min:0',
-            'products' => 'required|array',
-            'products.*.id' => 'required|exists:products,id',
-            'products.*.quantity' => 'required|integer|min:1',
+        $validated = $request->validate([
+            'customer_name' => 'nullable|string|max:255',
         ]);
-
+    
         DB::beginTransaction();
         try {
             $totalProductPrice = 0;
             $servicePrice = $request->service_price ?? 0;
-
-            // // Buat transaksi penjualan
+    
+            // Buat transaksi penjualan
             $sale = Sale::create([
                 'invoice_number' => $request->invoice_number,
                 'date' => Carbon::now(),
-                'customer_name' => $request->customer_name,
+                'customer_name' => $request->customer_name ?? 'Pelanggan',
                 'service_price' => $servicePrice,
-                'total_price' => 0, // Akan diupdate setelah menghitung harga produk
+                'total_price' => 0,  // Akan diupdate setelah menghitung harga produk
                 'user_id' => auth()->id(),
             ]);
-
-            // // Proses penjualan tiap produk
+    
+            // Proses penjualan setiap produk
             foreach ($request->products as $productData) {
                 if (!isset($productData['id']) || !isset($productData['quantity']) || $productData['quantity'] <= 0) {
                     continue;
                 }
-
+    
                 $product = Product::findOrFail($productData['id']);
                 
-                // // Cek jika stok mencukupi
+                // Cek jika stok mencukupi
                 if ($product->stock < $productData['quantity']) {
                     throw new \Exception("Stok produk {$product->name} tidak mencukupi.");
                 }
-
+    
                 $subtotal = $product->selling_price * $productData['quantity'];
                 $totalProductPrice += $subtotal;
-                
-                // // Buat detail penjualan
+    
+                // Buat detail penjualan
                 SaleDetail::create([
                     'sale_id' => $sale->id,
                     'product_id' => $product->id,
@@ -93,15 +88,15 @@ class SaleController extends Controller
                     'price' => $product->selling_price,
                     'subtotal' => $subtotal,
                 ]);
-
-                // // Simpan stok sebelum diupdate
+    
+                // Simpan stok sebelum diupdate
                 $stockBefore = $product->stock;
                 
-                // // Update stok produk
+                // Update stok produk
                 $product->stock -= $productData['quantity'];
                 $product->save();
                 
-                // // Catat pergerakan inventaris
+                // Catat pergerakan inventaris
                 InventoryMovement::create([
                     'date' => Carbon::now(),
                     'product_id' => $product->id,
@@ -113,12 +108,35 @@ class SaleController extends Controller
                     'stock_after' => $stockBefore - $productData['quantity'],
                     'reference' => 'Sale: ' . $request->invoice_number,
                 ]);
-            }
+    
+                // Update atau buat Sales Aggregate untuk produk ini
+                $period = Carbon::now()->format('Y-m'); // Ambil periode dari bulan dan tahun saat ini
 
-            // // Update total harga penjualan
+                // Cek apakah sudah ada agregat untuk produk ini di periode yang sama
+                $salesAggregate = SalesAggregate::where('product_id', $product->id)
+                    ->where('period', $period)
+                    ->first();
+                
+                if ($salesAggregate) {
+                    // Update agregat yang sudah ada
+                    $salesAggregate->total_sales += $productData['quantity'];
+                    $salesAggregate->total_price += $subtotal;
+                    $salesAggregate->save();
+                } else {
+                    // Jika belum ada, buat entri baru untuk sales_aggregate
+                    SalesAggregate::create([
+                        'product_id' => $product->id,
+                        'period' => $period,
+                        'total_sales' => $productData['quantity'],
+                        'total_price' => $subtotal,
+                    ]);
+                }
+            }
+    
+            // Update total harga penjualan
             $sale->total_price = $totalProductPrice + $servicePrice;
             $sale->save();
-
+    
             DB::commit();
             return redirect()->route('sales.show', $sale->id)
                 ->with('success', 'Transaksi penjualan berhasil disimpan.');
@@ -127,17 +145,18 @@ class SaleController extends Controller
             return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage())->withInput();
         }
     }
+    
 
     public function show(Sale $sale)
     {
-        // // Ubah dari details menjadi saleDetails sesuai dengan nama relasi di model Sale
+        // Load relasi yang diperlukan untuk penjualan
         $sale->load(['saleDetails.product', 'user']);
         return view('sales.show', compact('sale'));
     }
 
     public function invoice(Sale $sale)
     {
-        // // Ubah dari details menjadi saleDetails sesuai dengan nama relasi di model Sale
+        // Load relasi yang diperlukan untuk invoice
         $sale->load(['saleDetails.product', 'user']);
         return view('sales.invoice', compact('sale'));
     }
@@ -146,18 +165,18 @@ class SaleController extends Controller
     {
         DB::beginTransaction();
         try {
-            // // Mengembalikan stok produk
+            // Mengembalikan stok produk
             foreach ($sale->saleDetails as $detail) {
                 $product = Product::find($detail->product_id);
                 if ($product) {
-                    // // Simpan stok sebelum diupdate
+                    // Simpan stok sebelum diupdate
                     $stockBefore = $product->stock;
                     
-                    // // Update stok produk
+                    // Update stok produk
                     $product->stock += $detail->quantity;
                     $product->save();
                     
-                    // // Catat pergerakan inventaris
+                    // Catat pergerakan inventaris
                     InventoryMovement::create([
                         'date' => Carbon::now(),
                         'product_id' => $product->id,
@@ -172,7 +191,7 @@ class SaleController extends Controller
                 }
             }
 
-            // // Hapus detail penjualan dan penjualan
+            // Hapus detail penjualan dan penjualan
             $sale->saleDetails()->delete();
             $sale->delete();
 

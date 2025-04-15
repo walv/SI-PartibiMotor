@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -11,14 +10,12 @@ class ForecastComparison extends Model
 
     protected $fillable = [
         'product_id',
-        'best_method',
-        'date'
+        'period_start',
+        'period_end',
+        'ses_mape',
     ];
 
-    protected $casts = [
-        'date' => 'datetime'
-    ];
-
+    // Relasi dengan Product
     public function product()
     {
         return $this->belongsTo(Product::class);

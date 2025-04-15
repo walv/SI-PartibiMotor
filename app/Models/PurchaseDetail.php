@@ -17,6 +17,12 @@ class PurchaseDetail extends Model
         'subtotal',
     ];
 
+    // Menambahkan properti $dates jika ada kolom datetime
+    protected $dates = [
+        'created_at',    // Kolom created_at (jika ada)
+        'updated_at',    // Kolom updated_at (jika ada)
+    ];
+
     public function purchase()
     {
         return $this->belongsTo(Purchase::class);

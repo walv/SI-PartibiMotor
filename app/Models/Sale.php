@@ -11,25 +11,30 @@ class Sale extends Model
 {
     use HasFactory;
 
-    // 
     protected $fillable = [
         'invoice_number',
         'date',
         'customer_name',
-        'service_price',
         'total_price',
         'user_id'
     ];
 
-    protected $casts = [
-        'date' => 'datetime',
+    // Menambahkan properti $dates untuk kolom datetime lainnya
+    protected $dates = [
+        'date',          
+        'created_at',   
+        'updated_at',    
     ];
+
+    protected $casts = [
+        'date' => 'datetime',  // Mengonversi kolom date menjadi objek datetime
+    ];
+
     public function user()
     {
         return $this->belongsTo(User::class);
     }
-
-  
+    
     public function saleDetails()
     {
         return $this->hasMany(SaleDetail::class);

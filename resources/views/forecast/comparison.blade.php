@@ -14,6 +14,7 @@
             </div>
         </div>
         <div class="card-body">
+            <!-- Table Perbandingan Akurasi Metode Peramalan -->
             <div class="row mb-4">
                 <div class="col-md-12">
                     <div class="card">
@@ -22,7 +23,7 @@
                         </div>
                         <div class="card-body">
                             <div class="table-responsive">
-                                <table class="table table-bordered table-hover">
+                                <table class="table table-bordered table-hover" id="comparisonTable">
                                     <thead class="table-light">
                                         <tr>
                                             <th>Produk</th>
@@ -36,7 +37,7 @@
                                     </thead>
                                     <tbody>
                                         @forelse($comparisons as $comparison)
-                                        <tr>
+                                        <tr class="{{ $comparison->best_method == 'ses' ? 'table-success' : ($comparison->best_method == 'des' ? 'table-warning' : 'table-info') }}">
                                             <td>{{ $comparison->product->name }}</td>
                                             <td>
                                                 @if($comparison->best_method == 'ses')
@@ -47,32 +48,9 @@
                                                     <span class="badge bg-warning">Triple Exponential Smoothing</span>
                                                 @endif
                                             </td>
-                                            <td>
-                                                @php
-                                                    $evaluation = App\Models\ForecastEvaluation::where('product_id', $comparison->product_id)
-                                                        ->where('method', $comparison->best_method)
-                                                        ->first();
-                                                @endphp
-                                                @if($evaluation)
-                                                    {{ number_format($evaluation->mape, 2) }}%
-                                                @else
-                                                    -
-                                                @endif
-                                            </td>
-                                            <td>
-                                                @if($evaluation)
-                                                    {{ number_format($evaluation->mae, 2) }}
-                                                @else
-                                                    -
-                                                @endif
-                                            </td>
-                                            <td>
-                                                @if($evaluation)
-                                                    {{ number_format($evaluation->rmse, 2) }}
-                                                @else
-                                                    -
-                                                @endif
-                                            </td>
+                                            <td>{{ number_format($evaluation->mape ?? '-', 2) }}%</td>
+                                            <td>{{ number_format($evaluation->mae ?? '-', 2) }}</td>
+                                            <td>{{ number_format($evaluation->rmse ?? '-', 2) }}</td>
                                             <td>{{ $comparison->date->format('d/m/Y H:i') }}</td>
                                             <td>
                                                 <a href="{{ route('forecast.' . $comparison->best_method) }}" class="btn btn-sm btn-primary">
@@ -99,6 +77,7 @@
                 </div>
             </div>
 
+            <!-- Grafik Perbandingan MAPE -->
             <div class="row">
                 <div class="col-md-12">
                     <div class="card">
@@ -111,13 +90,14 @@
                         <div class="card-footer bg-light">
                             <small class="text-muted">
                                 <i class="fas fa-info-circle me-1"></i> 
-                                Grafik ini membandingkan nilai MAPE (Mean Absolute Percentage Error) dari ketiga metode peramalan. Semakin rendah nilai MAPE, semakin akurat metode peramalan.
+                                Grafik ini membandingkan nilai MAPE (Mean Absolute Percentage Error) dari ketiga metode peramalan.
                             </small>
                         </div>
                     </div>
                 </div>
             </div>
 
+            <!-- Panduan Interpretasi -->
             <div class="alert alert-info mt-4">
                 <h6><i class="fas fa-lightbulb me-2"></i> Panduan Interpretasi</h6>
                 <ul class="mb-0">

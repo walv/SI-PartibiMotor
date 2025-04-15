@@ -13,11 +13,12 @@ return new class extends Migration
     {
         Schema::create('sales', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained();
-            $table->string('invoice_number', 30);
+            $table->string('invoice_number');
             $table->dateTime('date');
-            $table->decimal('service_price', 10, 2);
+            $table->string('customer_name')->nullable(); // nullable jika kustomer tidak menyebutkan nama
+            $table->decimal('service_price', 10, 2)->nullable();
             $table->decimal('total_price', 10, 2);
+            $table->foreignId('user_id')->constrained();
             $table->timestamps();
         });
     }

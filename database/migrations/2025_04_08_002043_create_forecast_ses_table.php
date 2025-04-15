@@ -14,10 +14,10 @@ return new class extends Migration
         Schema::create('forecast_ses', function (Blueprint $table) {
             $table->id();
             $table->foreignId('product_id')->constrained();
-            $table->date('period');
-            $table->integer('actual_sales');
-            $table->decimal('forecast_value', 10, 2);
-            $table->float('alpha');
+            $table->date('period'); // Ubah menjadi dateTime jika perlu presisi waktu
+            $table->decimal('actual', 10, 2)->nullable(); // Tambahkan nullable
+            $table->decimal('forecast', 10, 2);
+            $table->decimal('alpha', 4, 2);
             $table->timestamps();
         });
     }

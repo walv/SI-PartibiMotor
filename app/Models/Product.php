@@ -41,17 +41,6 @@ public function forecastSES()
 {
     return $this->hasMany(ForecastSES::class);
 }
-
-public function forecastDES()
-{
-    return $this->hasMany(ForecastDES::class);
-}
-
-public function forecastTES()
-{
-    return $this->hasMany(ForecastTES::class);
-}
-
 public function inventoryMovements()
 {
     return $this->hasMany(InventoryMovement::class);

@@ -1,485 +1,347 @@
 <?php
 
 namespace App\Http\Controllers;
-
-use App\Models\Product;
+//hard part. komentar untuk bagian sulit
 use App\Models\SalesAggregate;
+use App\Models\Product;
 use App\Models\ForecastSes;
-use App\Models\ForecastDes;
-use App\Models\ForecastTes;
-use App\Models\ForecastEvaluation;
-use App\Models\ForecastComparison;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Carbon\Carbon;
-//REMINDER!!!! berikan komentar karna ini bagian paling susah
+use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 
 class ForecastController extends Controller
 {
+    // Method untuk halaman utama forecasting
     public function index()
     {
-        $products = Product::orderBy('name')->get();
+        $products = Product::with('category')->get();
         return view('forecast.index', compact('products'));
     }
 
+    // Method untuk halaman SES
     public function ses()
     {
-        $products = Product::orderBy('name')->get();
+        $products = Product::with('salesAggregates')->get();
         return view('forecast.ses', compact('products'));
     }
 
-    public function des()
-    {
-        $products = Product::orderBy('name')->get();
-        return view('forecast.des', compact('products'));
-    }
-
-    public function tes()
-    {
-        $products = Product::orderBy('name')->get();
-        return view('forecast.tes', compact('products'));
-    }
-//logika untuk menghitung dengan metode peramalan
+    // Method utama untuk kalkulasi semua jenis forecasting
     public function calculate(Request $request)
-    {
-        $request->validate([
-            'method' => 'required|in:ses,des,tes',
-            'product_id' => 'required|exists:products,id',
-            'period' => 'required|integer|min:1',
-            'alpha' => 'required|numeric|min:0|max:1',
-            'beta' => 'nullable|numeric|min:0|max:1',
-            'gamma' => 'nullable|numeric|min:0|max:1',
-            'forecast_periods' => 'required|integer|min:1|max:12',
+{
+    try {
+        // Validasi input
+        $validated = $this->validateRequest($request);
+        
+        // Ambil data historis
+        $historicalData = $this->getHistoricalData($validated);
+        
+        // Proses peramalan
+        $result = $this->processForecast($validated, $historicalData);
+
+        // Siapkan data grafik
+        $chartData = $this->prepareChartData($historicalData, $result, $validated); // Pastikan $chartData di sini
+        
+        // Simpan hasil peramalan
+        $this->saveForecastResults($validated['method'], $validated['product_id'], $result);
+        // dd($chartData); 
+        // Kirim data ke view
+        return view('forecast.result', [
+            'method' => strtoupper($validated['method']),
+            'product' => Product::find($validated['product_id']),
+            'parameters' => $result['parameters'],
+            'result' => $result,
+            'chartData' => $chartData,  // Pastikan chartData ada
+            'metrics' => $this->calculateMetrics($result)
         ]);
+    } catch (\Exception $e) {
+        // Tangani error
+        return redirect()->back()->withErrors(['system_error' => $e->getMessage()])->withInput();
+    }
+}
 
-        $method = $request->method;
-        $productId = $request->product_id;
-        $period = $request->period;
-        $alpha = $request->alpha;
-        $beta = $request->beta ?? 0;
-        $gamma = $request->gamma ?? 0;
-        $forecastPeriods = $request->forecast_periods;
+    
+    // Menambahkan fungsi perbandingan di ForecastController
 
-        // input data histori produk
-        $historicalData = SalesAggregate::where('product_id', $productId)
-            ->orderBy('year')
-            ->orderBy('month')
-            ->take($period)
+    // ========================
+    // CORE BUSINESS LOGIC
+    // ========================
+    public function validateRequest(Request $request)
+    {
+        return $request->validate([
+            'method'           => 'required|in:ses',
+            'product_id'       => 'required|exists:products,id',
+            'alpha'            => 'required|numeric|min:0.01|max:0.99',
+            'start_period'     => 'required_if:method,ses|date', // Start period hanya untuk SES
+            'period'           => 'required_if:method,des,tes|integer|min:3|max:36', // Periode untuk DES/TES wajib diisi
+            'forecast_periods' => 'required|integer|min:1|max:24',
+        ]);
+    }
+
+    private function getHistoricalData(array $validated)
+    {
+        $productId = $validated['product_id'];
+        // Ambil data penjualan mulai dari periode awal (start_period) yang dipilih
+        $startDate = Carbon::parse($validated['start_period']);
+        $data = SalesAggregate::where('product_id', $productId)
+            ->where('period', '>=', $startDate)
+            ->orderBy('period')
             ->get();
-
-        if ($historicalData->count() < $period) {
-            return redirect()->back()->with('error', 'Data historis tidak cukup untuk periode yang dipilih.');
+        if ($data->isEmpty()) {
+            throw new \Exception('Tidak ada data penjualan dari periode awal yang dipilih.');
         }
+        return $data;
+    }
+private function processForecast(array $validated, $historicalData)
+{
 
-        // persiapkan data
-        $actualData = $historicalData->pluck('quantity')->toArray();
-        $dates = [];
-        foreach ($historicalData as $data) {
-            $dates[] = $data->year . '-' . str_pad($data->month, 2, '0', STR_PAD_LEFT);
-        }
+    return $this->calculateSES(
+        $historicalData->pluck('total_sales')->toArray(),
+        $validated['alpha'],
+        $validated['forecast_periods']
+    );
+}
 
-        // perhitungan berdasarkan 3 metode exponential
-        switch ($method) {
-            case 'ses':
-                $result = $this->calculateSES($actualData, $alpha, $forecastPeriods);
-                break;
-            case 'des':
-                $result = $this->calculateDES($actualData, $alpha, $beta, $forecastPeriods);
-                break;
-            case 'tes':
-                $result = $this->calculateTES($actualData, $alpha, $beta, $gamma, $forecastPeriods);
-                break;
-        }
 
-        // Simpan hasil prakiraan ke database
-        $this->saveForecastResults($method, $productId, $dates, $actualData, $result, $alpha, $beta, $gamma);
+private function calculateSES(array $actualData, float $alpha, int $forecastPeriods)
+{
+    $n = count($actualData);
+    $fitted = [];
+    // Inisialisasi: anggap ramalan pertama sama dengan data aktual pertama
+    $fitted[0] = $actualData[0]; 
 
-        // kalkulasi untuk evaluasi matrik
-        $metrics = $this->calculateMetrics($actualData, $result['fitted']);
-
-        // simpan hasil evaluasi matrik
-        $this->saveEvaluationMetrics($method, $productId, $metrics);
-
-        // membuat data untuk ditampilkan
-        $product = Product::findOrFail($productId);
-        $forecastDates = $this->generateForecastDates(end($dates), $forecastPeriods);
-        $chartData = $this->prepareChartData($dates, $forecastDates, $actualData, $result);
-
-        return view('forecast.result', compact(
-            'method',
-            'product',
-            'period',
-            'alpha',
-            'beta',
-            'gamma',
-            'forecastPeriods',
-            'chartData',
-            'metrics',
-            'result'
-        ));
+    // Perhitungan nilai fitted untuk setiap periode actual berikutnya
+    for ($i = 1; $i < $n; $i++) {
+        $fitted[$i] = $alpha * $actualData[$i-1] + (1 - $alpha) * $fitted[$i-1];
     }
 
-    public function comparison()
+    // Perhitungan forecast untuk periode mendatang (out-of-sample)
+    $lastValue = $alpha * $actualData[$n-1] + (1 - $alpha) * $fitted[$n-1];
+    $forecast = array_fill(0, $forecastPeriods, $lastValue);
+
+    return [
+        'method'    => 'SES',
+        'actual'    => $actualData,
+        'fitted'    => $fitted,
+        'forecast'  => $forecast,
+        'parameters'=> ['alpha' => $alpha]
+    ];
+}
+
+
+
+
+    // ========================
+    // DATA PROCESSING UTILITIES
+    // ========================
+
+    private function prepareChartData($historicalData, array $result)
     {
-        $products = Product::orderBy('name')->get();
-        $comparisons = ForecastComparison::with('product')->get();
-        
-        return view('forecast.comparison', compact('products', 'comparisons'));
-    }
-// fungsi khusus Single Exponential
-    private function calculateSES($actualData, $alpha, $forecastPeriods)
-    {
-        $n = count($actualData);
-        $fitted = [];
-        $forecast = [];
-        
-        // inisiasi pertama untuk data penjualan atau aktual
-        $fitted[0] = $actualData[0];
-        
-        // Hitung nilai yang dipasang SES
-        for ($i = 1; $i < $n; $i++) {
-            $fitted[$i] = $alpha * $actualData[$i - 1] + (1 - $alpha) * $fitted[$i - 1];
+        // Siapkan label bulan/tahun untuk data historis
+        $labelsHist = $historicalData->pluck('period')->map(
+            fn($date) => Carbon::parse($date)->format('M Y')
+        )->toArray();
+
+        // Siapkan label untuk periode forecast (bulan setelah data terakhir)
+        $forecastCount = count($result['forecast']);
+        $forecastLabels = [];
+        $lastDate = Carbon::parse(end($labelsHist));
+        for ($i = 1; $i <= $forecastCount; $i++) {
+            $forecastLabels[] = $lastDate->addMonth()->format('M Y');
         }
-        
-        // hitung nilai peramalannya SES
-        $lastFitted = end($fitted);
-        for ($i = 0; $i < $forecastPeriods; $i++) {
-            $forecast[$i] = $lastFitted;
-        }
-        
+
+        // Gabungkan label historis dan forecast
+        $labels = array_merge($labelsHist, $forecastLabels);
+
+        // Siapkan dua deret data: aktual (dengan bagian forecast diberi null), dan hasil peramalan (gabungan fitted + forecast)
+        $actualSeries   = array_merge($result['actual'], array_fill(0, $forecastCount, null));
+        $forecastSeries = array_merge($result['fitted'], $result['forecast']);
+
         return [
-            'fitted' => $fitted,
-            'forecast' => $forecast
+            'labels'   => $labels,
+            'actual'   => $actualSeries,
+            'forecast' => $forecastSeries
         ];
     }
-//fungsi khusus Double Exponential
-    private function calculateDES($actualData, $alpha, $beta, $forecastPeriods)
-    {
-        $n = count($actualData);
-        $level = [];
-        $trend = [];
-        $fitted = [];
-        $forecast = [];
-        
-        // insiasi data
-        $level[0] = $actualData[0];
-        $trend[0] = $actualData[1] - $actualData[0];
-        $fitted[0] = $actualData[0];
-        
-        // Hitung level, tren, dan nilai yang disesuaikan  DES
-        for ($i = 1; $i < $n; $i++) {
-            $level[$i] = $alpha * $actualData[$i] + (1 - $alpha) * ($level[$i - 1] + $trend[$i - 1]);
-            $trend[$i] = $beta * ($level[$i] - $level[$i - 1]) + (1 - $beta) * $trend[$i - 1];
-            $fitted[$i] = $level[$i - 1] + $trend[$i - 1];
-        }
-        
-        // Hitung nilai perkiraan DES
-        $lastLevel = end($level);
-        $lastTrend = end($trend);
-        for ($i = 1; $i <= $forecastPeriods; $i++) {
-            $forecast[$i - 1] = $lastLevel + $i * $lastTrend;
-        }
-        
-        return [
-            'fitted' => $fitted,
-            'forecast' => $forecast,
-            'level' => $level,
-            'trend' => $trend
-        ];
-    }
-// fungsi untuk metode Triple Exponential
-    private function calculateTES($actualData, $alpha, $beta, $gamma, $forecastPeriods)
-    {
-        $n = count($actualData);
-        $level = [];
-        $trend = [];
-        $seasonal = [];
-        $fitted = [];
-        $forecast = [];
-        
-        // Tentukan panjang musim (dengan asumsi data bulanan, jadi musim = 12)
-        $seasonLength = 12;
-        
-        // insiasi
-        $level[0] = $actualData[0];
-        $trend[0] = 0;
-        
-        // Inisiasiindeks musiman untuk DES
-        for ($i = 0; $i < $seasonLength; $i++) {
-            $seasonal[$i] = $i < $n ? $actualData[$i] / $level[0] : 1;
-        }
-        
-        $fitted[0] = $level[0] * $seasonal[0];
-        
-        // Hitung level, tren, nilai musiman dan nilai yang disesuaikan
-        for ($i = 1; $i < $n; $i++) {
-            $s = $i % $seasonLength;
-            $level[$i] = $alpha * ($actualData[$i] / $seasonal[$s]) + (1 - $alpha) * ($level[$i - 1] + $trend[$i - 1]);
-            $trend[$i] = $beta * ($level[$i] - $level[$i - 1]) + (1 - $beta) * $trend[$i - 1];
-            $seasonal[$s + $seasonLength] = $gamma * ($actualData[$i] / $level[$i]) + (1 - $gamma) * $seasonal[$s];
-            $fitted[$i] = ($level[$i - 1] + $trend[$i - 1]) * $seasonal[$s];
-        }
-        
-        // hitung nilai peramalan Triple Exponential 
-        $lastLevel = end($level);
-        $lastTrend = end($trend);
-        for ($i = 1; $i <= $forecastPeriods; $i++) {
-            $s = ($n + $i - 1) % $seasonLength;
-            $forecast[$i - 1] = ($lastLevel + $i * $lastTrend) * $seasonal[$s + $seasonLength];
-        }
-        
-        return [
-            'fitted' => $fitted,
-            'forecast' => $forecast,
-            'level' => $level,
-            'trend' => $trend,
-            'seasonal' => $seasonal
-        ];
-    }
-//fungsi perhitungan MSE MAE dan MAPE
-    private function calculateMetrics($actual, $fitted)
-    {
-        $n = count($actual);
-        $mse = 0;
-        $mae = 0;
-        $mape = 0;
-        
-        for ($i = 0; $i < $n; $i++) {
-            $error = $actual[$i] - $fitted[$i];
-            $mse += pow($error, 2);
-            $mae += abs($error);
-            
-            if ($actual[$i] != 0) {
-                $mape += abs($error / $actual[$i]);
-            }
-        }
-        
-        $mse /= $n;
-        $rmse = sqrt($mse);
-        $mae /= $n;
-        $mape = ($mape / $n) * 100;
-        
-        return [
-            'mse' => $mse,
-            'rmse' => $rmse,
-            'mae' => $mae,
-            'mape' => $mape
-        ];
-    }
+    
+    
 
-    private function saveForecastResults($method, $productId, $dates, $actual, $result, $alpha, $beta, $gamma)
-    {
-        // fungsi Hapus perkiraan sebelumnya untuk produk dan metode TES
-        switch ($method) {
-            case 'ses':
-                ForecastSes::where('product_id', $productId)->delete();
-                break;
-            case 'des':
-                ForecastDes::where('product_id', $productId)->delete();
-                break;
-            case 'tes':
-                ForecastTes::where('product_id', $productId)->delete();
-                break;
-        }
-        
-        // simpan nilanya
-        $n = count($actual);
-        for ($i = 0; $i < $n; $i++) {
-            $date = explode('-', $dates[$i]);
-            $year = $date[0];
-            $month = intval($date[1]);
-            
-            switch ($method) {
-                case 'ses':
-                    ForecastSes::create([
-                        'product_id' => $productId,
-                        'year' => $year,
-                        'month' => $month,
-                        'actual' => $actual[$i],
-                        'forecast' => $result['fitted'][$i],
-                        'alpha' => $alpha,
-                    ]);
-                    break;
-                case 'des':
-                    ForecastDes::create([
-                        'product_id' => $productId,
-                        'year' => $year,
-                        'month' => $month,
-                        'actual' => $actual[$i],
-                        'forecast' => $result['fitted'][$i],
-                        'level' => $result['level'][$i],
-                        'trend' => $result['trend'][$i],
-                        'alpha' => $alpha,
-                        'beta' => $beta,
-                    ]);
-                    break;
-                case 'tes':
-                    $s = $i % 12;
-                    ForecastTes::create([
-                        'product_id' => $productId,
-                        'year' => $year,
-                        'month' => $month,
-                        'actual' => $actual[$i],
-                        'forecast' => $result['fitted'][$i],
-                        'level' => $result['level'][$i],
-                        'trend' => $result['trend'][$i],
-                        'seasonal' => $result['seasonal'][$s + 12],
-                        'alpha' => $alpha,
-                        'beta' => $beta,
-                        'gamma' => $gamma,
-                    ]);
-                    break;
-            }
-        }
-        
-        // simpan nilai peramalan berdasarkan 3 metode exponential
-        $forecastDates = $this->generateForecastDates(end($dates), count($result['forecast']));
-        for ($i = 0; $i < count($result['forecast']); $i++) {
-            $date = explode('-', $forecastDates[$i]);
-            $year = $date[0];
-            $month = intval($date[1]);
-            
-            switch ($method) {
-                case 'ses':
-                    ForecastSes::create([
-                        'product_id' => $productId,
-                        'year' => $year,
-                        'month' => $month,
-                        'actual' => null,
-                        'forecast' => $result['forecast'][$i],
-                        'alpha' => $alpha,
-                    ]);
-                    break;
-                case 'des':
-                    ForecastDes::create([
-                        'product_id' => $productId,
-                        'year' => $year,
-                        'month' => $month,
-                        'actual' => null,
-                        'forecast' => $result['forecast'][$i],
-                        'level' => end($result['level']),
-                        'trend' => end($result['trend']),
-                        'alpha' => $alpha,
-                        'beta' => $beta,
-                    ]);
-                    break;
-                case 'tes':
-                    $s = ($n + $i) % 12;
-                    ForecastTes::create([
-                        'product_id' => $productId,
-                        'year' => $year,
-                        'month' => $month,
-                        'actual' => null,
-                        'forecast' => $result['forecast'][$i],
-                        'level' => end($result['level']),
-                        'trend' => end($result['trend']),
-                        'seasonal' => $result['seasonal'][$s + 12],
-                        'alpha' => $alpha,
-                        'beta' => $beta,
-                        'gamma' => $gamma,
-                    ]);
-                    break;
-            }
-        }
-    }
 
-    private function saveEvaluationMetrics($method, $productId, $metrics)
-    {
-        // Hapus perkiraan sebelumnya untuk produk dan metode
-        ForecastEvaluation::where('product_id', $productId)
-            ->where('method', $method)
-            ->delete();
-        
-        // simpan hasil evaluasi
-        ForecastEvaluation::create([
-            'product_id' => $productId,
-            'method' => $method,
-            'mse' => $metrics['mse'],
-            'rmse' => $metrics['rmse'],
-            'mae' => $metrics['mae'],
-            'mape' => $metrics['mape'],
-            'date' => Carbon::now(),
-        ]);
-        
-        // update tabel perbandingan
-        $this->updateComparisonTable($productId);
-    }
 
-    private function updateComparisonTable($productId)
-    {
-        // Get evaluations for all methods for this product
-        $evaluations = ForecastEvaluation::where('product_id', $productId)->get();
-        
-        if ($evaluations->count() > 0) {
-            // untuk mencari nilai mape terbaik
-            $bestMethod = $evaluations->sortBy('mape')->first()->method;
-            
-            // Hapus perkiraan sebelumnya untuk produk
-            ForecastComparison::where('product_id', $productId)->delete();
-            
-            // simpan
-            ForecastComparison::create([
+
+
+private function saveForecastResults(string $method, int $productId, array $result)
+{
+    // Tentukan model yang sesuai berdasarkan metode peramalan
+    $model = match($method) {
+        'ses' => ForecastSes::class,
+    };
+
+    DB::transaction(function () use ($model, $productId, $result) {
+        // Hapus data lama untuk produk tertentu (agar tidak terjadi duplikasi)
+        $model::where('product_id', $productId)->delete();
+
+        // Menyimpan hasil peramalan yang sudah difit (fitted)
+        foreach ($result['fitted'] as $index => $value) {
+            Log::info('Saving fitted data:', [
                 'product_id' => $productId,
-                'best_method' => $bestMethod,
-                'date' => Carbon::now(),
+                'period' => Carbon::now()->addMonths($index + 1)->format('Y-m-01'),
+                'actual' => $result['actual'][$index] ?? null,
+                'forecast' => $value,
+                'forecast_value' => $value,
+                'alpha' => $result['parameters']['alpha'],
+            ]);
+
+            $model::create([
+                'product_id' => $productId,
+                'period' => Carbon::now()->addMonths($index + 1)->format('Y-m-01'),  // Menyimpan periode peramalan
+                'actual' => $result['actual'][$index] ?? null,
+                'forecast' => $value,
+                'forecast_value' => $value,  // Menyimpan forecast_value untuk fitted
+                'alpha' => $result['parameters']['alpha'],  // Menyimpan alpha
+                
             ]);
         }
-    }
-// fungsi menghasilkan tanggal prakiraan
-    private function generateForecastDates($lastDate, $periods)
-    {
-        $dates = [];
-        $date = explode('-', $lastDate);
-        $year = intval($date[0]);
-        $month = intval($date[1]);
-        
-        for ($i = 0; $i < $periods; $i++) {
-            $month++;
-            if ($month > 12) {
-                $month = 1;
-                $year++;
-            }
-            $dates[] = $year . '-' . str_pad($month, 2, '0', STR_PAD_LEFT);
+
+        // Menyimpan hasil peramalan masa depan (forecast)
+        foreach ($result['forecast'] as $index => $value) {
+            Log::info('Saving forecast data:', [
+                'product_id' => $productId,
+                'period' => Carbon::now()->addMonths(count($result['fitted']) + $index + 1)->format('Y-m-01'),
+                'forecast' => $value,
+                'forecast_value' => $value,
+                'alpha' => $result['parameters']['alpha'],
+               
+            ]);
+
+            $model::create([
+                'product_id' => $productId,
+                'period' => Carbon::now()->addMonths(count($result['fitted']) + $index + 1)->format('Y-m-01'),
+                'forecast' => $value,
+                'forecast_value' => $value,  // Menyimpan forecast_value untuk forecast
+                'alpha' => $result['parameters']['alpha'], // Menyimpan alpha
+                
+            ]);
         }
-        
-        return $dates;
+    });
+}
+
+
+private function buildResponse(array $validated, array $result, array $chartData)
+{
+    $product = Product::find($validated['product_id']);
+    if (!$product) {
+        return redirect()->back()->withErrors(['Produk tidak ditemukan.']);
     }
-// buat grafiknya
-    private function prepareChartData($dates, $forecastDates, $actual, $result)
+
+    // Menghitung metrik untuk peramalan
+    $metrics = $this->calculateMetrics($result);
+
+    // Kembalikan view hasil peramalan SES dengan data lengkap
+    return view('forecast.result', [
+        'method'     => 'SES',
+        'product'    => $product,
+        'parameters' => $result['parameters'],
+        'result'     => $result,
+        'chartData'  => $chartData,
+        'metrics'    => $metrics // Menambahkan metrik ke view
+    ]);
+}
+
+private function calculateMetrics(array $result)
+{
+    $actual = $result['actual'];
+    $fitted = $result['fitted'];
+    if (empty($actual) || empty($fitted)) {
+        throw new \Exception("Data aktual atau fitted tidak tersedia untuk evaluasi.");
+    }
+    // Hitung MSE, MAE, dan MAPE
+    $mse = $mae = $mape = 0.0;
+    $count = 0;
+    for ($i = 1; $i < count($fitted); $i++) {
+        if (!isset($actual[$i]) || $actual[$i] == 0) continue;  // hindari pembagian nol
+        $error = $actual[$i] - $fitted[$i];
+        $mse   += pow($error, 2);
+        $mae   += abs($error);
+        $mape  += abs($error / $actual[$i]);
+        $count++;
+    }
+    // Rata-rata (Mean) untuk setiap metrik
+    $mse_mean = $count > 0 ? $mse / $count : 0;
+    return [
+        'mse'  => $mse_mean,
+        'mae'  => $count > 0 ? $mae / $count : 0,
+        'mape' => $count > 0 ? ($mape / $count) * 100 : 0,
+        'rmse' => $count > 0 ? sqrt($mse_mean) : 0,
+    ];
+}
+
+    // ========================
+    // ADDITIONAL SUPPORT METHODS
+    // ========================
+
+    public function history(Request $request)
+{
+    try {
+        // Validasi input
+        $validated = $request->validate([
+            'method' => 'required|in:ses,des,tes',
+            'product_id' => 'required|exists:products,id',
+            'per_page' => 'nullable|integer|min:1|max:100'
+        ]);
+
+        // Tentukan model berdasarkan metode
+        $model = match($validated['method']) {
+            'ses' => ForecastSes::class,
+        };
+
+        // Query data historis
+        $query = $model::where('product_id', $validated['product_id'])
+            ->orderBy('period', 'desc');
+
+        // Pagination
+        $perPage = $validated['per_page'] ?? 24;
+        $data = $query->paginate($perPage)
+            ->appends($request->query());
+
+        // Ambil nama produk untuk ditampilkan
+        $product = Product::findOrFail($validated['product_id']);
+
+        return view('forecast.history', [
+            'data' => $data,
+            'method' => strtoupper($validated['method']),
+            'product' => $product,
+            'parameters' => $this->getMethodParameters($validated['method'])
+        ]);
+
+    } catch (ValidationException $e) {
+        return redirect()->back()->withErrors($e->errors());
+    } catch (\Exception $e) {
+        Log::error('History Error: ' . $e->getMessage());
+        return redirect()->back()
+            ->withErrors(['error' => 'Gagal memuat histori peramalan']);
+    }
+}
+
+private function getMethodParameters(string $method)
+{
+    return match($method) {
+        'ses' => ['alpha' => 'Parameter Alpha (α)'],
+        default => []
+    };
+}
+
+
+    public function export(Request $request)
     {
-        $chartData = [
-            'labels' => array_merge($dates, $forecastDates),
-            'datasets' => [
-                [
-                    'label' => 'Data Aktual',
-                    'data' => array_merge($actual, array_fill(0, count($forecastDates), null)),
-                    'borderColor' => 'rgba(75, 192, 192, 1)',
-                    'backgroundColor' => 'rgba(75, 192, 192, 0.2)',
-                    'pointRadius' => 3,
-                    'borderWidth' => 2,
-                    'fill' => false
-                ],
-                [
-                    'label' => 'Nilai Fitted',
-                    'data' => array_merge($result['fitted'], array_fill(0, count($forecastDates), null)),
-                    'borderColor' => 'rgba(54, 162, 235, 1)',
-                    'backgroundColor' => 'rgba(54, 162, 235, 0.2)',
-                    'pointRadius' => 3,
-                    'borderWidth' => 2,
-                    'fill' => false
-                ],
-                [
-                    'label' => 'Nilai Forecast',
-                    'data' => array_merge(array_fill(0, count($dates), null), $result['forecast']),
-                    'borderColor' => 'rgba(255, 99, 132, 1)',
-                    'backgroundColor' => 'rgba(255, 99, 132, 0.2)',
-                    'pointRadius' => 3,
-                    'borderWidth' => 2,
-                    'fill' => false
-                ]
-            ]
-        ];
-        
-        return $chartData;
+        // Method untuk export data
+        // ... (kode lengkap)
+    }
+
+    public function apiData(Request $request)
+    {
+        // Method untuk API
+        // ... (kode lengkap)
     }
 }

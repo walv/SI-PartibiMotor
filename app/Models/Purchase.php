@@ -18,6 +18,13 @@ class Purchase extends Model
         'total_price',
     ];
 
+    // Menambahkan properti $dates untuk kolom datetime
+    protected $dates = [
+        'date',          // Kolom date yang merupakan tanggal
+        'created_at',    // Kolom created_at
+        'updated_at',    // Kolom updated_at
+    ];
+
     public function user()
     {
         return $this->belongsTo(User::class);
