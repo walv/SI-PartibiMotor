@@ -69,18 +69,31 @@
                         </tr>
                         @endforeach
                     </tbody>
-                    <tfoot>
-                        <tr>
-                            <th colspan="3" class="text-right">Biaya Servis:</th>
-                            <th>Rp {{ number_format($sale->service_price, 0, ',', '.') }}</th>
-                        </tr>
-                        <tr>
-                            <th colspan="3" class="text-right">Total:</th>
-                            <th>Rp {{ number_format($sale->total_price, 0, ',', '.') }}</th>
-                        </tr>
-                    </tfoot>
                 </table>
             </div>
+            
+            @if($sale->saleServiceDetails->isNotEmpty())
+            <div class="table-responsive mt-4">
+                <table class="table table-bordered table-striped">
+                    <thead>
+                        <tr>
+                            <th>Jasa</th>
+                            <th>Harga</th>
+                            <th>Subtotal</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($sale->saleServiceDetails as $serviceDetail)
+                        <tr>
+                            <td>{{ $serviceDetail->service->name }}</td>
+                            <td>Rp {{ number_format($serviceDetail->price, 0, ',', '.') }}</td>
+                            <td>Rp {{ number_format($serviceDetail->subtotal, 0, ',', '.') }}</td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+            @endif
         </div>
     </div>
 </div>

@@ -55,7 +55,7 @@ public function store(Request $request)
         'products.*.id' => 'nullable|exists:products,id',
         'products.*.quantity' => 'nullable|numeric|min:1',
         'services.*.id' => 'nullable|exists:services,id',
-       'services.*.price' => 'nullable|numeric|min:0',
+       'services.*.price' => 'nullable|numeric|min:1',
 ], [
     'services.*.price.numeric' => 'Harga jasa harus berupa angka.',
     'services.*.price.min' => 'Harga jasa tidak boleh kurang dari 0.', // Validasi harga jasa
@@ -99,15 +99,17 @@ public function store(Request $request)
                 $serviceModel = Service::findOrFail($service['id']); // Ambil data jasa dari database
         
                 // Gunakan harga dari database jika harga tidak dikirim dari form
-                $price = $service['price'] ?? $serviceModel->harga;
+                $price = (isset($service['price']) && $service['price'] > 0) ? 
+                $service['price'] : $serviceModel->harga;
         
                 SaleServiceDetail::create([
                     'sale_id' => $sale->id,
                     'service_id' => $serviceModel->id,
                     'price' => $price, // Gunakan harga dari form atau database
-                    'subtotal' => $price, // Subtotal sama dengan harga
+                    'subtotal' => $price * 1, // Subtotal sama dengan harga
                 ]);
-            $totalService += $price;
+                $totalService += $price;
+               
         }
     }
         // Update total harga
@@ -128,14 +130,14 @@ public function store(Request $request)
     public function show(Sale $sale)
     {
         // Load relasi yang diperlukan untuk penjualan
-        $sale->load(['saleDetails.product', 'user']);
+        $sale->load(['saleDetails.product','saleServiceDetails.service','user']);
         return view('sales.show', compact('sale'));
     }
 
     public function invoice(Sale $sale)
     {
         // Load relasi yang diperlukan untuk invoice
-        $sale->load(['saleDetails.product', 'user']);
+        $sale->load(['saleDetails.product','saleServiceDetails.service','user']);
         return view('sales.invoice', compact('sale'));
     }
 

@@ -151,8 +151,7 @@
                 <div class="col-md-3">
                     <div class="input-group">
                         <span class="input-group-text">Rp</span>
-                        <input type="number" name="services[${index}][price]" class="service-price" value="0" required>
-                        <input type="hidden" name="services[${index}][price]" class="service-price-hidden">
+  <input type="number" name="services[${index}][price]" class="form-control service-price" min="0" step="1000" required>
                     </div>
                 </div>
                 <div class="col-md-2">

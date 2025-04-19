@@ -12,7 +12,7 @@ class SaleServiceDetail extends Model
         'sale_id',
         'service_id',
         'quantity',
-        'harga_satuan',
+        'price',
         'subtotal',
     ];
 

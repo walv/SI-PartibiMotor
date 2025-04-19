@@ -14,9 +14,9 @@
                     <div class="row mb-4">
                         <div class="col-sm-6">
                             <h5 class="mb-3">Dari:</h5>
-                            <h3 class="text-dark mb-1">PARTI BIMOTOR</h3>
-                            <div>Jl. Liga Utara 1 Blok C2 No.58</div>
-                            <div>Telp: 021-12345678</div>
+                            <h3 class="text-dark mb-1">PARTIBI MOTOR</h3>
+                            <div>Gajahmekar, Kec. Kutawaringin, Kabupaten Bandung, Jawa Barat</div>
+                            <div>Telp: 08xxxxxxx</div>
                             <div>Email: info@partibimotor.com</div>
                         </div>
                         <div class="col-sm-6">
@@ -48,25 +48,36 @@
                                 </tr>
                                 @endforeach
                             </tbody>
-                            <tfoot>
-                                @if($sale->service_price > 0)
-                                <tr>
-                                    <th colspan="3" class="text-right">Biaya Servis:</th>
-                                    <th class="text-right">Rp {{ number_format($sale->service_price, 0, ',', '.') }}</th>
-                                </tr>
-                                @endif
-                                <tr>
-                                    <th colspan="3" class="text-right">Total:</th>
-                                    <th class="text-right">Rp {{ number_format($sale->total_price, 0, ',', '.') }}</th>
-                                </tr>
-                            </tfoot>
                         </table>
                     </div>
+                    
+                    @if($sale->saleServiceDetails->isNotEmpty())
+                    <div class="table-responsive-sm mt-4">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Jasa</th>
+                                    <th class="text-right">Harga</th>
+                                    <th class="text-right">Subtotal</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($sale->saleServiceDetails as $serviceDetail)
+                                <tr>
+                                    <td>{{ $serviceDetail->service->name }}</td>
+                                    <td class="text-right">Rp {{ number_format($serviceDetail->price, 0, ',', '.') }}</td>
+                                    <td class="text-right">Rp {{ number_format($serviceDetail->subtotal, 0, ',', '.') }}</td>
+                                </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                    @endif
                     
                     <div class="row">
                         <div class="col-lg-8">
                             <div class="mt-4">
-                                <p class="mb-2">Terima kasih telah berbelanja di PartiBi motor.</p>
+                                <p class="mb-2">Terima kasih telah berbelanja di Partibi Motor.</p>
                                 <p class="mb-2">Barang yang sudah dibeli tidak dapat dikembalikan.</p>
                             </div>
                         </div>
