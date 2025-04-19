@@ -24,6 +24,12 @@
             </a>
         </li>
         <li>
+            <a href="{{ route('services.index') }}" class="nav-link {{ request()->routeIs('services.*') ? 'active' : 'text-white' }}">
+                <i class="fas fa-tools me-2"></i>
+                Manajemen Jasa
+            </a>
+        </li>
+        <li>
             <a href="{{ route('purchases.index') }}" class="nav-link {{ request()->routeIs('purchases.*') ? 'active' : 'text-white' }}">
                 <i class="fas fa-truck me-2"></i>
                 Transaksi Pembelian

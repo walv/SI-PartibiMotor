@@ -1,3 +1,4 @@
+{{-- filepath: resources/views/sales/create.blade.php --}}
 @extends('layouts.app')
 
 @section('title', 'Transaksi Penjualan Baru')
@@ -37,6 +38,7 @@
                     </div>
                 </div>
 
+                {{-- Produk --}}
                 <div class="card mb-3">
                     <div class="card-header bg-light">
                         <h6 class="mb-0">Daftar Produk</h6>
@@ -52,18 +54,24 @@
                     </div>
                 </div>
 
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label for="service_price" class="form-label">Biaya Servis (Opsional)</label>
-                        <div class="input-group">
-                            <span class="input-group-text">Rp</span>
-                            <input type="number" class="form-control @error('service_price') is-invalid @enderror" 
-                                   id="service_price" name="service_price" min="0" value="{{ old('service_price', 0) }}">
-                        </div>
-                        @error('service_price')
-                            <div class="invalid-feedback">{{ $message }}</div>
-                        @enderror
+                {{-- Jasa --}}
+                <div class="card mb-3">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0">Daftar Jasa</h6>
                     </div>
+                    <div class="card-body">
+                        <div id="service-container">
+                            <!-- Service rows will be added here -->
+                        </div>
+                        
+                        <button type="button" class="btn btn-success mt-2" id="add-service">
+                            <i class="fas fa-plus"></i> Tambah Jasa
+                        </button>
+                    </div>
+                </div>
+
+                {{-- Total --}}
+                <div class="row mb-3">
                     <div class="col-md-6">
                         <label for="total_price" class="form-label">Total Harga</label>
                         <div class="input-group">
@@ -90,141 +98,164 @@
 @push('scripts')
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Variabel untuk menyimpan indeks produk
-        let productIndex = 0;
-        
-        // Template untuk baris produk
-        function getProductRowTemplate(index) {
-            return `
-                <div class="row mb-2 product-row align-items-center">
-                    <div class="col-md-5">
-                        <select name="products[${index}][id]" class="form-select product-select" required>
-                            <option value="">-- Pilih Produk --</option>
-                            @foreach($products as $product)
-                            <option value="{{ $product->id }}" data-price="{{ $product->selling_price }}" data-stock="{{ $product->stock }}">
-                                {{ $product->name }} (Stok: {{ $product->stock }})
-                            </option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="col-md-2">
-                        <input type="number" name="products[${index}][quantity]" class="form-control product-quantity" 
-                               min="1" max="999" value="1" required placeholder="Jumlah">
-                    </div>
-                    <div class="col-md-3">
-                        <div class="input-group">
-                            <span class="input-group-text">Rp</span>
-                            <input type="text" class="form-control product-price" readonly>
-                            <input type="hidden" name="products[${index}][price]" class="product-price-hidden">
-                        </div>
-                    </div>
-                    <div class="col-md-2">
-                        <button type="button" class="btn btn-danger remove-product">
-                            <i class="fas fa-trash"></i>
-                        </button>
+    let productIndex = 0;
+    let serviceIndex = 0;
+
+    // Template untuk baris produk
+    function getProductRowTemplate(index) {
+    return `
+        <div class="row mb-2 product-row align-items-center">
+            <div class="col-md-5">
+                <select name="products[${index}][id]" class="form-select product-select" required>
+                    <option value="">-- Pilih Produk --</option>
+                    @foreach($products as $product)
+                    <option value="{{ $product->id }}" data-price="{{ $product->selling_price }}">
+                        {{ $product->name }}
+                    </option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="col-md-3">
+                <div class="input-group">
+                    <span class="input-group-text">Rp</span>
+                    <input type="text" class="form-control product-price" readonly>
+                    <input type="hidden" name="products[${index}][price]" class="product-price-hidden">
+                </div>
+            </div>
+            <div class="col-md-2">
+                <input type="number" name="products[${index}][quantity]" class="form-control product-quantity" min="1" value="1" required>
+            </div>
+            <div class="col-md-2">
+                <button type="button" class="btn btn-danger remove-product">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+    // Template untuk baris jasa
+    function getServiceRowTemplate(index) {
+        return `
+            <div class="row mb-2 service-row align-items-center">
+                <div class="col-md-5">
+                    <select name="services[${index}][id]" class="form-select service-select" required>
+    <option value="">-- Pilih Jasa --</option>
+    @foreach($services as $service)
+    <option value="{{ $service->id }}" data-price="{{ $service->harga }}">
+        {{ $service->name }}
+    </option>
+    @endforeach
+</select>
+                </div>
+                <div class="col-md-3">
+                    <div class="input-group">
+                        <span class="input-group-text">Rp</span>
+                        <input type="number" name="services[${index}][price]" class="service-price" value="0" required>
+                        <input type="hidden" name="services[${index}][price]" class="service-price-hidden">
                     </div>
                 </div>
-            `;
-        }
-        
-        // Fungsi untuk menambahkan baris produk baru
-        function addProductRow() {
-            const productContainer = document.getElementById('product-container');
-            const rowHtml = getProductRowTemplate(productIndex);
-            
-            // Buat element div untuk menampung baris produk
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = rowHtml;
-            const productRow = tempDiv.firstElementChild;
-            
-            productContainer.appendChild(productRow);
-            
-            // Tambahkan event listener untuk select produk
-            const select = productRow.querySelector('.product-select');
-            select.addEventListener('change', updatePrice);
-            
-            // Tambahkan event listener untuk quantity
-            const quantity = productRow.querySelector('.product-quantity');
-            quantity.addEventListener('input', updateSubtotal);
-            
-            // Tambahkan event listener untuk tombol hapus
-            const removeButton = productRow.querySelector('.remove-product');
-            removeButton.addEventListener('click', function() {
-                productRow.remove();
-                calculateTotal();
-            });
-            
-            productIndex++;
-            calculateTotal();
-        }
-        
-        // Fungsi untuk mengupdate harga berdasarkan produk yang dipilih
-        function updatePrice(e) {
-            const select = e.target;
-            const option = select.options[select.selectedIndex];
-            
-            if (select.value) {
-                const price = option.dataset.price;
-                const stock = parseInt(option.dataset.stock);
-                const row = select.closest('.product-row');
-                const priceInput = row.querySelector('.product-price');
-                const priceHidden = row.querySelector('.product-price-hidden');
-                const quantityInput = row.querySelector('.product-quantity');
-                
-                // Set harga dan maksimum quantity berdasarkan stok
-                priceInput.value = formatRupiah(price);
-                priceHidden.value = price;
-                quantityInput.max = stock;
-                
-                // Jika quantity melebihi stok, reset ke stok maksimum
-                if (parseInt(quantityInput.value) > stock) {
-                    quantityInput.value = stock;
-                }
-            }
-            
-            updateSubtotal(e);
-        }
-        
-        // Fungsi untuk mengupdate subtotal berdasarkan quantity
-        function updateSubtotal(e) {
-            calculateTotal();
-        }
-        
-        // Fungsi untuk menghitung total
-        function calculateTotal() {
-            let total = 0;
-            const rows = document.querySelectorAll('.product-row');
-            
-            rows.forEach(row => {
-                const select = row.querySelector('.product-select');
-                const quantity = parseInt(row.querySelector('.product-quantity').value) || 0;
-                
-                if (select.selectedIndex > 0) {
-                    const price = parseFloat(select.options[select.selectedIndex].dataset.price);
-                    total += price * quantity;
-                }
-            });
-            
-            // Tambahkan biaya servis jika ada
-            const servicePrice = parseFloat(document.getElementById('service_price').value) || 0;
-            total += servicePrice;
-            
-            document.getElementById('total_price').value = formatRupiah(total);
-        }
-        
-        // Fungsi untuk format rupiah
-        function formatRupiah(angka) {
-            return new Intl.NumberFormat('id-ID').format(angka);
-        }
-        
-        // Event listener untuk tombol tambah produk
-        document.getElementById('add-product').addEventListener('click', addProductRow);
-        
-        // Event listener untuk perubahan biaya servis
-        document.getElementById('service_price').addEventListener('input', calculateTotal);
-        
-        // Tambahkan baris produk pertama saat halaman dimuat
-        addProductRow();
+                <div class="col-md-2">
+                    <button type="button" class="btn btn-danger remove-service">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+
+    // Tambah produk
+    document.getElementById('add-product').addEventListener('click', function() {
+        const container = document.getElementById('product-container');
+        container.insertAdjacentHTML('beforeend', getProductRowTemplate(productIndex));
+        productIndex++;
     });
+
+    // Tambah jasa
+    document.getElementById('add-service').addEventListener('click', function() {
+        const container = document.getElementById('service-container');
+        container.insertAdjacentHTML('beforeend', getServiceRowTemplate(serviceIndex));
+        serviceIndex++;
+    });
+
+    // Update harga produk saat memilih produk
+    document.addEventListener('change', function(event) {
+    if (event.target.classList.contains('product-select')) {
+        const selectedOption = event.target.selectedOptions[0];
+        const price = parseFloat(selectedOption.dataset.price); // Ambil harga dari data-price
+        const priceField = event.target.closest('.product-row').querySelector('.product-price');
+        const priceHiddenField = event.target.closest('.product-row').querySelector('.product-price-hidden');
+
+        // Update harga di field produk
+        if (!isNaN(price)) {
+            priceField.value = new Intl.NumberFormat('id-ID').format(price);
+            priceHiddenField.value = price;
+        } else {
+            priceField.value = '';
+            priceHiddenField.value = '';
+        }
+
+        // Recalculate total jika perlu
+        calculateTotal();
+    }
+});
+///jasa
+document.addEventListener('change', function(event) {
+    if (event.target.classList.contains('service-select')) {
+        const selectedOption = event.target.selectedOptions[0];
+        const price = parseFloat(selectedOption.dataset.price); // Ambil harga dari data-price
+        const priceField = event.target.closest('.service-row').querySelector('.service-price');
+
+        // Update harga di field jasa
+        if (!isNaN(price)) {
+            priceField.value = price; // Isi harga default
+        } else {
+            priceField.value = '';
+        }
+
+        // Recalculate total jika perlu
+        calculateTotal();
+    }
+});
+    document.addEventListener('click', function(event) {
+    // Hapus produk
+    if (event.target.classList.contains('remove-product') || event.target.closest('.remove-product')) {
+        const productRow = event.target.closest('.product-row');
+        productRow.remove();
+        calculateTotal(); // Recalculate total setelah produk dihapus
+    }
+
+    // Hapus jasa
+    if (event.target.classList.contains('remove-service') || event.target.closest('.remove-service')) {
+        const serviceRow = event.target.closest('.service-row');
+        serviceRow.remove();
+        calculateTotal(); // Recalculate total setelah jasa dihapus
+    }
+});
+
+    // Hitung total
+    document.addEventListener('input', function() {
+        calculateTotal();
+    });
+
+    function calculateTotal() {
+    let total = 0;
+
+    // Hitung total produk
+    document.querySelectorAll('.product-row').forEach(row => {
+        const price = parseFloat(row.querySelector('.product-price-hidden').value || 0);
+        const quantity = parseInt(row.querySelector('.product-quantity').value || 0);
+        total += price * quantity;
+    });
+
+    // Hitung total jasa
+    document.querySelectorAll('.service-row').forEach(row => {
+        const price = parseFloat(row.querySelector('.service-price').value || 0); // Ambil harga dari input
+        total += price;
+    });
+
+    document.getElementById('total_price').value = new Intl.NumberFormat('id-ID').format(total);
+}
+});
 </script>
 @endpush

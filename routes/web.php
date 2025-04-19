@@ -10,6 +10,7 @@ use App\Http\Controllers\SaleController;
 use App\Http\Controllers\PurchaseController;
 use App\Http\Controllers\ForecastController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\ServiceController;
 
 /*
 |--------------------------------------------------------------------------
@@ -85,6 +86,17 @@ Route::middleware(['auth'])->group(function () {
     Route::put('/products/{product}', [ProductController::class, 'update'])->name('products.update');
     Route::delete('/products/{product}', [ProductController::class, 'destroy'])->name('products.destroy');
 
+    //==========================
+    // manajemen Jasa
+    //==========================
+    Route::prefix('services')->name('services.')->group(function () {
+        Route::get('/', [ServiceController::class, 'index'])->name('index'); // Daftar jasa
+        Route::get('/create', [ServiceController::class, 'create'])->name('create'); // Form tambah jasa
+        Route::post('/', [ServiceController::class, 'store'])->name('store'); // Simpan jasa baru
+        Route::get('/{service}/edit', [ServiceController::class, 'edit'])->name('edit'); // Form edit jasa
+        Route::put('/{service}', [ServiceController::class, 'update'])->name('update'); // Update jasa
+        Route::delete('/{service}', [ServiceController::class, 'destroy'])->name('destroy'); // Hapus jasa
+    });
     // ========================
     // Manajemen Penjualan
     // ========================

@@ -39,4 +39,16 @@ class Sale extends Model
     {
         return $this->hasMany(SaleDetail::class);
     }
+
+
+// Relasi ke jasa
+public function saleServiceDetails() {
+    return $this->hasMany(SaleServiceDetail::class);
+}
+
+// Hitung total harga
+public function getTotalAttribute() {
+    return $this->saleDetails->sum('subtotal') + 
+           $this->saleServiceDetails->sum('subtotal');
+}
 }
