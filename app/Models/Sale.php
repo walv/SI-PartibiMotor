@@ -51,4 +51,13 @@ public function getTotalAttribute() {
     return $this->saleDetails->sum('subtotal') + 
            $this->saleServiceDetails->sum('subtotal');
 }
+public function products()
+{
+    return $this->hasMany(SaleDetail::class, 'sale_id');
+}
+
+public function services()
+{
+    return $this->hasMany(SaleServiceDetail::class, 'sale_id');
+}
 }

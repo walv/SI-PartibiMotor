@@ -11,6 +11,9 @@ use App\Http\Controllers\PurchaseController;
 use App\Http\Controllers\ForecastController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\ServiceController;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Http\Controllers\ExportImportController;
+
 
 /*
 |--------------------------------------------------------------------------
@@ -47,29 +50,24 @@ Route::post('/update-password', [UserController::class, 'updatePassword'])->name
 Route::middleware(['auth'])->group(function () {
     // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+});
 
-  
-    });
-   
 // ========================
 // Rute Berdasarkan Role
 // ========================
-// Hanya bisa diakses oleh admin dan kasir 
-Route::middleware(['auth', 'role:admin,kasir'])->group(function () {
-    Route::get('/sales', [SaleController::class, 'index'])->name('sales.index');
-    Route::get('/sales/create', [SaleController::class, 'create'])->name('sales.create');
-    Route::post('/sales', [SaleController::class, 'store'])->name('sales.store');
-    Route::get('/sales/{sale}', [SaleController::class, 'show'])->name('sales.show');
-    Route::get('/sales/{sale}/invoice', [SaleController::class, 'invoice'])->name('sales.invoice');
-    Route::delete('/sales/{sale}', [SaleController::class, 'destroy'])->name('sales.destroy');
-});
-
 // Hanya bisa diakses oleh admin
 Route::middleware(['auth', 'role:admin'])->group(function () {
+   //=========================
+   // export import
+   //=========================
+    // Halaman utama untuk export dan import
+    Route::get('/sales/exportimport', [ExportImportController::class, 'index'])->name('sales.exportimport');
+    // Export Data
+    Route::get('/sales/export', [ExportImportController::class, 'export'])->name('sales.export');
+    // Import Data
+    Route::post('/sales/import', [ExportImportController::class, 'import'])->name('sales.import');
+    Route::get('/sales/import/template', [ExportImportController::class, 'downloadTemplate'])->name('sales.import.template');
     // ========================
-    // Rute Registrasi (Hanya untuk admin)
-    // ===================
-   // ========================
     // Rute Registrasi (Hanya untuk admin)
     // ========================
     Route::get('/register', [RegisterController::class, 'showRegistrationForm'])->name('register');
@@ -126,8 +124,23 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::get('/forecast/ses', [ForecastController::class, 'ses'])->name('forecast.ses'); // Untuk SES
     Route::post('/forecast/calculate', [ForecastController::class, 'calculate'])->name('forecast.calculate');
     Route::get('/forecast/result', [ForecastController::class, 'result'])->name('forecast.result'); // Jika diperlukan
+
+   
 });
 
 
-
+// Hanya bisa diakses oleh admin dan kasir 
+Route::middleware(['auth', 'role:admin,kasir'])->group(function () {
+    Route::prefix('sales')->group(function () {
+        // Urutan dari yang paling spesifik ke umum
+        Route::get('/create', [SaleController::class, 'create'])->name('sales.create');
+        Route::post('/', [SaleController::class, 'store'])->name('sales.store');
+        Route::get('/', [SaleController::class, 'index'])->name('sales.index');
+        
+        // Route parameter harus di bawah
+        Route::get('/{sale}', [SaleController::class, 'show'])->name('sales.show');
+        Route::get('/{sale}/invoice', [SaleController::class, 'invoice'])->name('sales.invoice');
+        Route::delete('/{sale}', [SaleController::class, 'destroy'])->name('sales.destroy');
+    });
+});
 
