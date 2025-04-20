@@ -48,5 +48,10 @@
                 Transaksi Penjualan
             </a>
         </li>
+        <li class="nav-item">
+            <a class="nav-link" href="{{ route('register') }}">
+                <i class="fas fa-user-plus me-2"></i> Registrasi
+            </a>
+        </li>
     </ul>
 </div>

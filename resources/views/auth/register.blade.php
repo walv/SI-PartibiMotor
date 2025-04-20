@@ -61,6 +61,14 @@
                             </div>
                         </div>
 
+                        <div class="mb-3">
+                            <label for="role" class="form-label">Role</label>
+                            <select name="role" id="role" class="form-control" required>
+                                <option value="admin">Admin</option>
+                                <option value="kasir" selected>Kasir</option>
+                            </select>
+                        </div>  
+                        
                         <div class="row mb-0">
                             <div class="col-md-6 offset-md-4">
                                 <button type="submit" class="btn btn-primary">

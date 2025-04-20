@@ -34,11 +34,6 @@ Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [LoginController::class, 'login']);
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
-// ========================
-// Rute Registrasi (Hanya untuk admin)
-// ========================
-Route::get('/register', [RegisterController::class, 'showRegistrationForm'])->name('register');
-Route::post('/register', [RegisterController::class, 'register']);
 
 // ========================
 // Rute Ganti Password
@@ -50,9 +45,35 @@ Route::post('/update-password', [UserController::class, 'updatePassword'])->name
 // Rute yang Membutuhkan Login
 // ========================
 Route::middleware(['auth'])->group(function () {
-
     // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+  
+    });
+   
+// ========================
+// Rute Berdasarkan Role
+// ========================
+// Hanya bisa diakses oleh admin dan kasir 
+Route::middleware(['auth', 'role:admin,kasir'])->group(function () {
+    Route::get('/sales', [SaleController::class, 'index'])->name('sales.index');
+    Route::get('/sales/create', [SaleController::class, 'create'])->name('sales.create');
+    Route::post('/sales', [SaleController::class, 'store'])->name('sales.store');
+    Route::get('/sales/{sale}', [SaleController::class, 'show'])->name('sales.show');
+    Route::get('/sales/{sale}/invoice', [SaleController::class, 'invoice'])->name('sales.invoice');
+    Route::delete('/sales/{sale}', [SaleController::class, 'destroy'])->name('sales.destroy');
+});
+
+// Hanya bisa diakses oleh admin
+Route::middleware(['auth', 'role:admin'])->group(function () {
+    // ========================
+    // Rute Registrasi (Hanya untuk admin)
+    // ===================
+   // ========================
+    // Rute Registrasi (Hanya untuk admin)
+    // ========================
+    Route::get('/register', [RegisterController::class, 'showRegistrationForm'])->name('register');
+    Route::post('/register', [RegisterController::class, 'register']);
 
     // ========================
     // Manajemen Pembelian
@@ -86,9 +107,9 @@ Route::middleware(['auth'])->group(function () {
     Route::put('/products/{product}', [ProductController::class, 'update'])->name('products.update');
     Route::delete('/products/{product}', [ProductController::class, 'destroy'])->name('products.destroy');
 
-    //==========================
-    // manajemen Jasa
-    //==========================
+    // ========================
+    // Manajemen Jasa
+    // ========================
     Route::prefix('services')->name('services.')->group(function () {
         Route::get('/', [ServiceController::class, 'index'])->name('index'); // Daftar jasa
         Route::get('/create', [ServiceController::class, 'create'])->name('create'); // Form tambah jasa
@@ -97,15 +118,6 @@ Route::middleware(['auth'])->group(function () {
         Route::put('/{service}', [ServiceController::class, 'update'])->name('update'); // Update jasa
         Route::delete('/{service}', [ServiceController::class, 'destroy'])->name('destroy'); // Hapus jasa
     });
-    // ========================
-    // Manajemen Penjualan
-    // ========================
-    Route::get('/sales', [SaleController::class, 'index'])->name('sales.index');
-    Route::get('/sales/create', [SaleController::class, 'create'])->name('sales.create');
-    Route::post('/sales', [SaleController::class, 'store'])->name('sales.store');
-    Route::get('/sales/{sale}', [SaleController::class, 'show'])->name('sales.show');
-    Route::get('/sales/{sale}/invoice', [SaleController::class, 'invoice'])->name('sales.invoice');
-    Route::delete('/sales/{sale}', [SaleController::class, 'destroy'])->name('sales.destroy');
 
     // ========================
     // Peramalan / Forecast
@@ -116,16 +128,6 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/forecast/result', [ForecastController::class, 'result'])->name('forecast.result'); // Jika diperlukan
 });
 
-// ========================
-// Rute Berdasarkan Role
-// ========================
 
-// Hanya bisa diakses oleh admin
-Route::middleware(['auth', 'role:admin'])->group(function () {
-    // Kamu bisa tambah rute khusus admin di sini
-});
 
-// Hanya bisa diakses oleh kasir
-Route::middleware(['auth', 'role:kasir'])->group(function () {
-    // Kamu bisa tambah rute khusus kasir di sini
-});
+
