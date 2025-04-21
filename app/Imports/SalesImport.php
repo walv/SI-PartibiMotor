@@ -29,51 +29,57 @@ class SalesImport implements ToCollection
                     'customer_name' => $row[1], // Kolom 2: Nama Pelanggan
                     'total_price' => 0, // Akan dihitung nanti
                     'user_id' => auth()->id(),
-                    'date' => now(),
+                    'date' => $row(2),
                 ]);
 
                 $totalProduct = 0;
                 $totalService = 0;
 
-                // Simpan data produk ke tabel `sale_details`
-                $products = json_decode($row[2], true); // Kolom 3: JSON Produk
-                if (!empty($products)) {
-                    foreach ($products as $product) {
-                        $productModel = Product::findOrFail($product['id']);
+                // proses dulu data produk
+                for ($i = 2; $i <= 5; $i += 2) { // Kolom 3-6: Produk dan Jumlah
+                    if (!empty($row[$i]) && !empty($row[$i + 1])) {
+                        $productName = $row[$i];
+                        $quantity = $row[$i + 1];
+    
+                        $productModel = Product::firstOrCreate(
+                            ['name' => $productName],
+                            ['selling_price' => 0, 'stock' => 100] // Default jika produk baru
+                        );
 
                         SaleDetail::create([
                             'sale_id' => $sale->id,
                             'product_id' => $productModel->id,
-                            'quantity' => $product['quantity'],
+                            'quantity' => $quantity,
                             'price' => $productModel->selling_price,
-                            'subtotal' => $productModel->selling_price * $product['quantity'],
+                            'subtotal' => $productModel->selling_price * $quantity,
                         ]);
 
-                        $totalProduct += $productModel->selling_price * $product['quantity'];
-                        $productModel->decrement('stock', $product['quantity']);
+                        $totalProduct += $productModel->selling_price * $quantity;
+                        $productModel->decrement('stock', $quantity);
                     }
                 }
 
-                // Simpan data jasa ke tabel `sale_service_details`
+                // proses data jasa ke tabel `sale_service_details`
 $services = json_decode($row[3], true); // Kolom 4: JSON Jasa
-if (!empty($services)) {
-    foreach ($services as $service) {
-        $serviceModel = Service::find($service['id']);
+for ($i = 6; $i <= 9; $i += 2) { // Kolom 7-10: Jasa dan Harga
+    if (!empty($row[$i]) && !empty($row[$i + 1])) {
+        $serviceName = $row[$i];
+        $price = $row[$i + 1];
 
-        // Validasi apakah jasa ditemukan
-        if (!$serviceModel) {
-            throw new \Exception("Jasa dengan ID " . $service['id'] . " tidak ditemukan.");
-        }
+        $serviceModel = Service::firstOrCreate(
+            ['name' => $serviceName],
+            ['price' => $price] // Default jika jasa baru
+        );
 
         SaleServiceDetail::create([
             'sale_id' => $sale->id,
             'service_id' => $serviceModel->id,
-            'price' => $service['price'],
-            'subtotal' => $service['price'],
+            'price' => $price,
+            'subtotal' => $price,
         ]);
     
 
-                        $totalService += $service['price'];
+                        $totalService += $price;
                     }
                 }
 

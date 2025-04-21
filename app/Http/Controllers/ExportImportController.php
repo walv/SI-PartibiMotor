@@ -14,9 +14,19 @@ class ExportImportController extends Controller
         return view('exportimport.exportimport');
     }
 
-    public function export()
+    public function export(Request $request)
     {
-        return Excel::download(new SalesExport, 'sales.xlsx');
+        // Validasi input bulan dan tahun
+    $request->validate([
+        'month' => 'required|numeric|min:1|max:12',
+        'year' => 'required|numeric|min:2000|max:' . date('Y'),
+    ]);
+
+    $month = $request->input('month');
+    $year = $request->input('year');
+
+    // Ekspor data penjualan berdasarkan bulan dan tahun
+    return Excel::download(new SalesExport($month, $year), 'laporan_penjualan_' . $month . '_' . $year . '.xlsx');
     }
 
     public function import(Request $request)

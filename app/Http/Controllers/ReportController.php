@@ -29,13 +29,13 @@ class ReportController extends Controller
             ->orderBy('date', 'desc')
             ->get();
         
-        // Calculate summary
+        // hitung total penjualan
         $totalSales = $sales->sum('total_price');
         $totalServiceFee = $sales->sum('service_price');
         $totalProductSales = $totalSales - $totalServiceFee;
         $totalTransactions = $sales->count();
         
-        // Get top products
+        // top produk
         $topProducts = SaleDetail::join('sales', 'sale_details.sale_id', '=', 'sales.id')
             ->whereBetween('sales.date', [$startDate, $endDate])
             ->select(
@@ -49,13 +49,13 @@ class ReportController extends Controller
             ->take(5)
             ->get();
         
-        // Get daily sales for chart
+        // chart penjualan harian
         $dailySales = Sale::whereBetween('date', [$startDate, $endDate])
             ->select(
                 DB::raw('DATE(date) as sale_date'),
                 DB::raw('SUM(total_price) as total_amount')
             )
-            ->groupBy('sale_date')
+            ->groupBy(DB::raw('DATE(date)'))
             ->orderBy('sale_date')
             ->get()
             ->keyBy('sale_date')
@@ -64,7 +64,7 @@ class ReportController extends Controller
             })
             ->toArray();
         
-        // Fill in missing dates with zero
+        // masukan 0 jika data tidak ada
         $period = new \DatePeriod(
             new \DateTime($startDate),
             new \DateInterval('P1D'),

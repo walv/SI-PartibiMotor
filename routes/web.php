@@ -13,7 +13,8 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\ServiceController;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Http\Controllers\ExportImportController;
-
+use App\Http\Controllers\ManualImportController;
+use App\Http\Controllers\ReportController;
 
 /*
 |--------------------------------------------------------------------------
@@ -57,16 +58,29 @@ Route::middleware(['auth'])->group(function () {
 // ========================
 // Hanya bisa diakses oleh admin
 Route::middleware(['auth', 'role:admin'])->group(function () {
-   //=========================
+   // ========================
+// Rute Laporan (Hanya untuk Admin)
+// ========================
+Route::prefix('reports')->name('reports.')->group(function () {
+    Route::get('/sales', [ReportController::class, 'sales'])->name('sales'); // Laporan Penjualan
+    Route::get('/purchases', [ReportController::class, 'purchases'])->name('purchases'); // Laporan Pembelian
+    Route::get('/inventory', [ReportController::class, 'inventory'])->name('inventory'); // Laporan Stok Barang
+    Route::get('/financial', [ReportController::class, 'financial'])->name('financial'); // Laporan Keuangan
+});
+   
+    //=========================
    // export import
    //=========================
-    // Halaman utama untuk export dan import
+    // Halaman utama untuk export dan import Uji Coba
     Route::get('/sales/exportimport', [ExportImportController::class, 'index'])->name('sales.exportimport');
     // Export Data
     Route::get('/sales/export', [ExportImportController::class, 'export'])->name('sales.export');
     // Import Data
     Route::post('/sales/import', [ExportImportController::class, 'import'])->name('sales.import');
     Route::get('/sales/import/template', [ExportImportController::class, 'downloadTemplate'])->name('sales.import.template');
+    Route::get('/sales/import/manual', [ManualImportController::class, 'create'])->name('sales.import.manual');
+    Route::post('/sales/import/manual', [ManualImportController::class, 'store'])->name('sales.import.manual.store');
+   
     // ========================
     // Rute Registrasi (Hanya untuk admin)
     // ========================

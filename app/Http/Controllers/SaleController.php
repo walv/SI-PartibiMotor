@@ -80,45 +80,91 @@ class SaleController extends Controller
             if (!empty($request->products)) {
                 foreach ($request->products as $product) {
                     $productModel = Product::findOrFail($product['id']);
-
+    
+                    $subtotal = $productModel->selling_price * $product['quantity'];
+    
+                    // Simpan detail penjualan
                     SaleDetail::create([
                         'sale_id' => $sale->id,
                         'product_id' => $productModel->id,
                         'quantity' => $product['quantity'],
                         'price' => $productModel->selling_price,
-                        'subtotal' => $productModel->selling_price * $product['quantity'],
+                        'subtotal' => $subtotal,
                     ]);
-
-                    $totalProduct += $productModel->selling_price * $product['quantity'];
+    
+                    $totalProduct += $subtotal;
+    
+                    // Simpan stok sebelum diupdate
+                    $stockBefore = $productModel->stock;
+    
+                    // Update stok produk
                     $productModel->decrement('stock', $product['quantity']);
+    
+                    // Catat pergerakan inventaris
+                    InventoryMovement::create([
+                        'date' => Carbon::now(),
+                        'product_id' => $productModel->id,
+                        'quantity' => $product['quantity'],
+                        'movement_type' => 'out',
+                        'reference_id' => $sale->id,
+                        'reference_type' => 'sale',
+                        'stock_before' => $stockBefore,
+                        'stock_after' => $stockBefore - $product['quantity'],
+                        'reference' => 'Sale: ' . $request->invoice_number,
+                    ]);
+    
+                    // Update atau buat Sales Aggregate
+                    $period = Carbon::now()->format('Y-m'); // Ambil periode dari bulan dan tahun saat ini
+                    $salesAggregate = SalesAggregate::where('product_id', $productModel->id)
+                        ->where('period', $period)
+                        ->first();
+    
+                    if ($salesAggregate) {
+                        // Update agregat yang sudah ada
+                        $salesAggregate->total_sales += $product['quantity'];
+                        $salesAggregate->total_price += $subtotal;
+                        $salesAggregate->save();
+                    } else {
+                        // Jika belum ada, buat entri baru untuk sales_aggregate
+                        SalesAggregate::create([
+                            'product_id' => $productModel->id,
+                            'period' => $period,
+                            'total_sales' => $product['quantity'],
+                            'total_price' => $subtotal,
+                        ]);
+                    }
                 }
             }
-
+    
             // Proses jasa (jika ada)
             if (!empty($request->services)) {
                 foreach ($request->services as $service) {
                     $serviceModel = Service::findOrFail($service['id']); // Ambil data jasa dari database
-
+    
                     // Gunakan harga dari database jika harga tidak dikirim dari form
                     $price = (isset($service['price']) && $service['price'] > 0) ?
                         $service['price'] : $serviceModel->harga;
-
+    
+                    $subtotal = $price * 1;
+    
                     SaleServiceDetail::create([
                         'sale_id' => $sale->id,
                         'service_id' => $serviceModel->id,
                         'price' => $price, // Gunakan harga dari form atau database
-                        'subtotal' => $price * 1, // Subtotal sama dengan harga
+                        'subtotal' => $subtotal, // Subtotal sama dengan harga
                     ]);
-                    $totalService += $price;
+    
+                    $totalService += $subtotal;
                 }
             }
+    
             // Update total harga
             $sale->update([
                 'total_price' => $totalProduct + $totalService,
             ]);
-
+    
             DB::commit();
-
+    
             return redirect()->route('sales.index')
                 ->with('success', 'Transaksi berhasil disimpan.');
         } catch (\Exception $e) {
@@ -126,6 +172,7 @@ class SaleController extends Controller
             return back()->with('error', 'Error: ' . $e->getMessage());
         }
     }
+    
 
     public function show(Sale $sale)
     {
