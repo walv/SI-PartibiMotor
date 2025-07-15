@@ -32,17 +32,21 @@ class UserController extends Controller
     public function store(Request $request)
     {
         $request->validate([
+            'name' => 'required|string|max:100',
             'username' => 'required|string|max:255|unique:users',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8|confirmed',
-            'role' => 'required|in:admin,kasir',
+            'role' => 'required|in:kasir',
+            
         ]);
 
         User::create([
+            'name' => $request->name,
             'username' => $request->username,
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'role' => $request->role,
+            'is_active' => $request->has('is_active') // Boolean
         ]);
 
         return redirect()->route('users.index')
@@ -63,13 +67,15 @@ class UserController extends Controller
     public function update(Request $request, User $user)
     {
         $request->validate([
+            'name' => 'required|string|max:100',
             'username' => ['required', 'string', 'max:255', Rule::unique('users')->ignore($user->id)],
             'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
             'password' => 'nullable|string|min:8|confirmed',
-            'role' => 'required|in:admin,kasir',
+            'role' => 'required|in:kasir',
         ]);
 
         $userData = [
+            
             'username' => $request->username,
             'email' => $request->email,
             'role' => $request->role,
@@ -125,5 +131,40 @@ public function updatePassword(Request $request)
     return redirect()->route('change.password')
         ->with('success', 'Password berhasil diubah.');
 }
-    
+    public function deactivate(User $user)
+{
+    if ($user->id === auth()->id()) {
+        return back()->with('error', 'Tidak dapat menonaktifkan akun sendiri.');
+    }
+
+    $user->delete(); // Ini akan soft delete jika menggunakan SoftDeletes
+
+    return back()->with('success', 'Akun kasir berhasil dinonaktifkan.');
 }
+   public function trashed()
+{
+    $users = User::onlyTrashed()->paginate(10);
+    return view('users.trashed', compact('users'));
+}
+
+// Method untuk mengaktifkan kembali akun
+public function restore($id)
+{
+    $user = User::onlyTrashed()->findOrFail($id);
+    $user->restore();
+
+    return redirect()->route('users.trashed')
+        ->with('success', 'Akun berhasil diaktifkan kembali.');
+}
+
+// Method untuk menghapus permanen
+public function forceDelete($id)
+{
+    $user = User::onlyTrashed()->findOrFail($id);
+    $user->forceDelete();
+
+    return redirect()->route('users.trashed')
+        ->with('success', 'Akun berhasil dihapus permanen.');
+}
+}
+

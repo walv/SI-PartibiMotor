@@ -20,11 +20,11 @@
                     @enderror
                 </div>
                 <div class="mb-3">
-                    <label for="harga" class="form-label">Harga Jasa</label>
+                    <label for="price" class="form-label">Harga Jasa</label>
                     <div class="input-group">
                         <span class="input-group-text">Rp</span>
-                        <input type="number" class="form-control @error('harga') is-invalid @enderror" id="harga" name="harga" value="{{ old('harga') }}" required>
-                        @error('harga')
+                        <input type="number" class="form-control @error('price') is-invalid @enderror" id="price" name="price" value="{{ old('price') }}" required>
+                        @error('price')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
                     </div>

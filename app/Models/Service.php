@@ -11,6 +11,13 @@ class Service extends Model
 
     protected $fillable = [
         'name',
-        'harga',
+        'price',
     ];
+
+
+
+    public function saleServiceDetails()
+{
+    return $this->hasMany(SaleServiceDetail::class);
+}
 }

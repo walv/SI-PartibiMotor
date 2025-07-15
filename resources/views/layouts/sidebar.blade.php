@@ -40,13 +40,6 @@
                     Transaksi Pembelian
                 </a>
             </li>
-            <li>
-                <a href="{{ route('forecast.index') }}"
-                    class="nav-link {{ request()->routeIs('forecast.*') ? 'active' : 'text-white' }}">
-                    <i class="fas fa-chart-line me-2"></i>
-                    Peramalan
-                </a>
-            </li>
         @endif
         <li>
             <a href="{{ route('sales.index') }}"
@@ -55,45 +48,63 @@
                 Transaksi Penjualan
             </a>
         </li>
-        <li class="nav-item">
-            <a class="nav-link" href="#" data-bs-toggle="collapse" data-bs-target="#reportMenu"
-                aria-expanded="false" aria-controls="reportMenu">
-                <i class="fas fa-file-alt"></i>
-                <span>Manajemen Laporan</span>
-            </a>
-            <div id="reportMenu" class="collapse">
-                <ul class="list-unstyled ps-3">
-                    <li>
-                        <a class="nav-link" href="{{ route('reports.sales') }}">Laporan Penjualan</a>
-                    </li>
-                    <li>
-                        <a class="nav-link" href="{{ route('reports.purchases') }}">Laporan Pembelian</a>
-                    </li>
-                    <li>
-                        <a class="nav-link" href="{{ route('reports.inventory') }}">Laporan Stok Barang</a>
-                    </li>
-                    <li>
-                        <a class="nav-link" href="{{ route('reports.financial') }}">Laporan Keuangan</a>
-                    </li>
-                </ul>
-            </div>
-        </li>
+
         @if (auth()->check() && auth()->user()->role == 'admin')
+            <li class="nav-item">
+                <a class="nav-link" href="#" data-bs-toggle="collapse" data-bs-target="#reportMenu"
+                    aria-expanded="false" aria-controls="reportMenu">
+                    <i class="fas fa-file-alt"></i>
+                    <span>Manajemen Laporan</span>
+                </a>
+                <div id="reportMenu" class="collapse">
+                    <ul class="list-unstyled ps-3">
+                        <li>
+                            <a class="nav-link" href="{{ route('reports.sales') }}">Laporan Penjualan</a>
+                        </li>
+                        <li>
+                            <a class="nav-link" href="{{ route('reports.purchases') }}">Laporan Pembelian</a>
+                        </li>
+                        <li>
+                            <a class="nav-link" href="{{ route('reports.inventory') }}">Laporan Stok Barang</a>
+                        </li>
+                        <li>
+                            <a class="nav-link" href="{{ route('reports.financial') }}">Laporan Keuangan</a>
+                        </li>
+                    </ul>
+                </div>
             <li>
-                @php
-                    \Log::info('URL Export & Import:', ['url' => route('sales.exportimport')]);
-                @endphp
-                <a href="{{ route('sales.exportimport') }}"
-                    class="nav-link {{ request()->routeIs('sales.exportimport') ? 'active' : 'text-white' }}">
-                    <i class="fas fa-file-export me-2"></i>
-                    Export & Import data penjualan
+                <a href="{{ route('forecast.index') }}"
+                    class="nav-link {{ request()->routeIs('forecast.*') ? 'active' : 'text-white' }}">
+                    <i class="fas fa-chart-line me-2"></i>
+                    Peramalan
+                </a>
+            </li>
+            </li>
+        @endif
+
+        @if (auth()->check() && auth()->user()->role == 'admin')
+            <li class="nav-item">
+                <a class="nav-link {{ request()->is('users*') ? 'active' : '' }}" href="{{ route('users.index') }}">
+                    <i class="fas fa-users me-2"></i> Manajemen User
                 </a>
             </li>
         @endif
+        
+
         <li class="nav-item">
-            <a class="nav-link" href="{{ route('register') }}">
-                <i class="fas fa-user-plus me-2"></i> Registrasi
+            <a class="nav-link" href="{{ route('account.show') }}">
+                <i class="fas fa-user-circle me-1"></i> Akun Saya
             </a>
         </li>
+        @if (auth()->check() && auth()->user()->role == 'admin')
+           <li>
+            <a href="{{ route('sales.exportimport') }}"
+                class="nav-link {{ request()->routeIs('sales.exportimport') ? 'active' : 'text-white' }}">
+                <i class="fas fa-file-export me-2"></i>
+                Export & Import data penjualan
+            </a>
+        </li>
+        @endif
+
     </ul>
 </div>

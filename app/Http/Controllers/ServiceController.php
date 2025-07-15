@@ -21,10 +21,10 @@ class ServiceController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'harga' => 'required|numeric|min:0',
+            'price' => 'required|numeric|min:0',
         ]);
 
-        Service::create($request->only('name', 'harga'));
+        Service::create($request->only('name', 'price'));
 
         return redirect()->route('services.index')->with('success', 'Jasa berhasil ditambahkan.');
     }
@@ -38,17 +38,23 @@ class ServiceController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'harga' => 'required|numeric|min:0',
+            'price' => 'required|numeric|min:0',
         ]);
 
-        $service->update($request->only('name', 'harga'));
+        $service->update($request->only('name', 'price'));
 
         return redirect()->route('services.index')->with('success', 'Jasa berhasil diperbarui.');
     }
     public function destroy(Service $service)
 {
-    $service->delete(); // Hapus jasa dari database
+    // Cek apakah jasa memiliki detail penjualan terkait
+    if ($service->saleServiceDetails()->exists()) {
+        return redirect()->route('services.index')
+            ->with('error', 'Jasa tidak bisa dihapus karena masih digunakan pada detail penjualan!');
+    }
 
-    return redirect()->route('services.index')->with('success', 'Jasa berhasil dihapus.');
+    $service->delete();
+    return redirect()->route('services.index')
+        ->with('success', 'Jasa berhasil dihapus.');
 }
 }

@@ -57,10 +57,11 @@
                 </table>
             </div>
 
-            <div class="mt-3">
-                {{ $categories->links() }}
-            </div>
+          <div class="mt-3">
+    {{ $categories->links('pagination::bootstrap-4') }}
+</div>
         </div>
     </div>
 </div>
+
 @endsection

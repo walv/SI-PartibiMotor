@@ -21,9 +21,9 @@
                         </div>
                         <div class="col-sm-6">
                             <h5 class="mb-3">Kepada:</h5>
-                            <h3 class="text-dark mb-1">{{ $sale->customer_name }}</h3>
+                            <h3 class="text-dark mb-1">{{ $sale->customer_name ?? 'Pelanggan' }}</h3>
                             <div>Invoice: {{ $sale->invoice_number }}</div>
-                            <div>Tanggal: {{ date('d/m/Y H:i', strtotime($sale->date)) }}</div>
+                            <div>Tanggal: {{ $sale->date->format('d/m/Y H:i') }}</div>
                             <div>Kasir: {{ $sale->user->name }}</div>
                         </div>
                     </div>
@@ -33,7 +33,7 @@
                             <thead>
                                 <tr>
                                     <th>Produk</th>
-                                    <th class="text-right">Harga</th>
+                                    <th class="text-right">Harga Satuan</th>
                                     <th class="text-center">Jumlah</th>
                                     <th class="text-right">Subtotal</th>
                                 </tr>
@@ -58,6 +58,7 @@
                                 <tr>
                                     <th>Jasa</th>
                                     <th class="text-right">Harga</th>
+                                    <th class="text-center">Jumlah</th>
                                     <th class="text-right">Subtotal</th>
                                 </tr>
                             </thead>
@@ -66,6 +67,7 @@
                                 <tr>
                                     <td>{{ $serviceDetail->service->name }}</td>
                                     <td class="text-right">Rp {{ number_format($serviceDetail->price, 0, ',', '.') }}</td>
+                                    <td class="text-center">{{ $serviceDetail->quantity }}</td>
                                     <td class="text-right">Rp {{ number_format($serviceDetail->subtotal, 0, ',', '.') }}</td>
                                 </tr>
                                 @endforeach
@@ -74,18 +76,34 @@
                     </div>
                     @endif
                     
-                    <div class="row">
-                        <div class="col-lg-8">
+                    <!-- Bagian Total Pembayaran -->
+                    <div class="row mt-4">
+                        <div class="col-lg-7">
                             <div class="mt-4">
                                 <p class="mb-2">Terima kasih telah berbelanja di Partibi Motor.</p>
                                 <p class="mb-2">Barang yang sudah dibeli tidak dapat dikembalikan.</p>
                             </div>
                         </div>
-                        <div class="col-lg-4">
+                        <div class="col-lg-5">
+                            <table class="table table-bordered">
+                                <tr>
+                                    <th>Subtotal Produk:</th>
+                                    <td class="text-right">Rp {{ number_format($sale->saleDetails->sum('subtotal'), 0, ',', '.') }}</td>
+                                </tr>
+                                @if($sale->saleServiceDetails->isNotEmpty())
+                                <tr>
+                                    <th>Subtotal Jasa:</th>
+                                    <td class="text-right">Rp {{ number_format($sale->saleServiceDetails->sum('subtotal'), 0, ',', '.') }}</td>
+                                </tr>
+                                @endif
+                                <tr class="font-weight-bold">
+                                    <th>TOTAL PEMBAYARAN:</th>
+                                    <td class="text-right">Rp {{ number_format($sale->total_price, 0, ',', '.') }}</td>
+                                </tr>
+                            </table>
                             <div class="mt-4 text-right">
                                 <div class="mb-2">Hormat Kami,</div>
-                                <br><br><br>
-                                <div>PARTIBI MOTOR</div>
+                                <div style="margin-top: 60px;">PARTIBI MOTOR</div>
                             </div>
                         </div>
                     </div>
@@ -119,9 +137,16 @@
             left: 0;
             top: 0;
             width: 100%;
+            margin: 0;
+            padding: 0;
+            box-shadow: none;
         }
         .btn {
-            display: none;
+            display: none !important;
+        }
+        @page {
+            size: auto;
+            margin: 5mm;
         }
     }
 </style>

@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Foundation\Auth\RegistersUsers;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Http\Request;
 
 class RegisterController extends Controller
 {
@@ -28,7 +29,7 @@ class RegisterController extends Controller
      *
      * @var string
      */
-    protected $redirectTo = '/home';
+    protected $redirectTo = '/dashboard';
 
     /**
      * Create a new controller instance.
@@ -37,7 +38,7 @@ class RegisterController extends Controller
      */
     public function __construct()
     {
-        $this->middleware('guest');
+        $this->middleware('auth');
     }
 
     /**
@@ -49,10 +50,17 @@ class RegisterController extends Controller
     protected function validator(array $data)
     {
         return Validator::make($data, [
-            'name' => ['required', 'string', 'max:255'],
+            'name' => ['required', 'string', 'max:100'],
+            'username' => [
+                'required',
+                'string',
+                'max:40',
+                'unique:users',
+                'regex:/^[a-z0-9_]+$/'
+            ],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
-            'role' => ['required', 'in:admin,kasir'], // bagian validasi role
+            'role' => ['required', 'in:kasir'], // bagian validasi role
         ]);
     }
 
@@ -66,13 +74,36 @@ class RegisterController extends Controller
     {
         return User::create([
             'name' => $data['name'],
+            'username' => strtolower($data['username']),
             'email' => $data['email'],
             'password' => Hash::make($data['password']),
             'role' => $data['role'], // bagian menyimpan role
         ]);
     }
     public function showRegistrationForm()
-{
-    return view('auth.register'); // Pastikan file view ini ada
-}
+    {
+        // Pastikan hanya admin yang bisa akses
+        if (auth()->user()->role !== 'admin') {
+            return redirect()->route('dashboard')
+                   ->with('error', 'Akses ditolak! Hanya admin yang dapat registrasi user.');
+        }
+
+        return view('auth.register');
+    }
+
+    // Override method register untuk validasi tambahan
+    public function register(Request $request)
+    {
+        if (auth()->user()->role !== 'admin') {
+            return redirect()->route('dashboard')
+                   ->with('error', 'Akses ditolak! Hanya admin yang dapat registrasi user.');
+        }
+
+        $this->validator($request->all())->validate();
+
+        $user = $this->create($request->all());
+
+        return redirect($this->redirectPath())
+               ->with('success', 'User baru berhasil didaftarkan!');
+    }
 }

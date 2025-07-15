@@ -50,7 +50,7 @@
                             <td>{{ date('d/m/Y H:i', strtotime($sale->date)) }}</td>
                             <td>{{ $sale->customer_name }}</td>
                             <td>Rp {{ number_format($sale->total_price, 0, ',', '.') }}</td>
-                            <td>{{ $sale->user->name }}</td>
+                            <td>{{ $sale->user->username ?? '-' }}</td>
                             <td>
                                 <a href="{{ route('sales.show', $sale->id) }}" class="btn btn-info btn-sm">
                                     <i class="fas fa-eye"></i>
@@ -69,7 +69,11 @@
                 </table>
             </div>
 
-            {{ $sales->links() }}
+            @if($sales->hasPages())
+<div class="mt-3 d-flex justify-content-center">
+    {!! $sales->appends(request()->except('page'))->onEachSide(1)->links('pagination::bootstrap-4')->with('class', 'pagination pagination-sm justify-content-center') !!}
+</div>
+@endif
         </div>
     </div>
 </div>

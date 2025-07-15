@@ -143,7 +143,7 @@
                             <th>Invoice</th>
                             <th>Tanggal</th>
                             <th>Kasir</th>
-                            <th>Biaya Jasa</th>
+
                             <th>Total</th>
                             <th>Aksi</th>
                         </tr>
@@ -154,7 +154,7 @@
                             <td>{{ $sale->invoice_number }}</td>
                             <td>{{ date('d/m/Y', strtotime($sale->date)) }}</td>
                             <td>{{ $sale->user->username }}</td>
-                            <td>Rp {{ number_format($sale->service_price, 0, ',', '.') }}</td>
+
                             <td>Rp {{ number_format($sale->total_price, 0, ',', '.') }}</td>
                             <td>
                                 <a href="{{ route('sales.show', $sale->id) }}" class="btn btn-sm btn-info">
@@ -176,6 +176,46 @@
         </div>
     </div>
 </div>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Export Laporan Penjualan</h5>
+            </div>
+            <div class="card-body">
+                <form action="{{ route('reports.sales.export') }}" method="GET">
+                    <input type="hidden" name="type" value="sales">
+                    <div class="mb-3">
+                        <label for="month" class="form-label">Bulan</label>
+                        <select name="month" id="month" class="form-select" required>
+                            @for ($i = 1; $i <= 12; $i++)
+                                <option value="{{ $i }}" {{ $i == $startDate->month ? 'selected' : '' }}>
+                                    {{ date('F', mktime(0, 0, 0, $i, 1)) }}
+                                </option>
+                            @endfor
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="year" class="form-label">Tahun</label>
+                        <select name="year" id="year" class="form-select" required>
+                            @for ($i = date('Y'); $i >= 2000; $i--)
+                                <option value="{{ $i }}" {{ $i == $startDate->year ? 'selected' : '' }}>
+                                    {{ $i }}
+                                </option>
+                            @endfor
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-file-excel me-2"></i> Export Excel
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
 @endsection
 
 @section('scripts')

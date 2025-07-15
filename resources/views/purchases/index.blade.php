@@ -76,11 +76,10 @@
             </div>
             
             @if($purchases->count() > 0)
-            <div class="mt-3">
-                {{ $purchases->appends(request()->query())->links() }}
-            </div>
-            @endif
-        </div>
+<div class="mt-3">
+    {{ $purchases->appends(request()->query())->links('pagination::bootstrap-4')->with('class', 'pagination-sm') }}
+</div>
+@endif
     </div>
 </div>
 @endsection

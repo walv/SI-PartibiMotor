@@ -8,9 +8,14 @@
         <div class="card-header">
             <div class="d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">Daftar Pengguna</h5>
-                <a href="{{ route('users.create') }}" class="btn btn-primary">
-                    <i class="fas fa-plus"></i> Tambah Pengguna
-                </a>
+                <div>
+                    <a href="{{ route('users.trashed') }}" class="btn btn-warning btn-sm me-2">
+                        <i class="fas fa-trash-restore me-1"></i> Lihat Akun Dinonaktifkan
+                    </a>
+                    <a href="{{ route('users.create') }}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-plus me-1"></i> Tambah Pengguna
+                    </a>
+                </div>
             </div>
         </div>
         <div class="card-body">
@@ -19,6 +24,7 @@
                     <thead class="table-light">
                         <tr>
                             <th width="5%">No</th>
+                            <th>Nama</th>
                             <th>Username</th>
                             <th>Email</th>
                             <th>Role</th>
@@ -29,6 +35,7 @@
                         @forelse ($users as $user)
                         <tr>
                             <td>{{ $loop->iteration }}</td>
+                            <td>{{ $user->name }}</td>
                             <td>{{ $user->username }}</td>
                             <td>{{ $user->email }}</td>
                             <td>
@@ -42,11 +49,12 @@
                                         <i class="fas fa-edit"></i>
                                     </a>
                                     @if ($user->id !== auth()->id())
-                                    <form action="{{ route('users.destroy', $user->id) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus pengguna ini?');">
+                                    <form action="{{ route('users.destroy', $user->id) }}" method="POST"
+                                        onsubmit="return confirm('Apakah Anda yakin ingin menonaktifkan pengguna ini?');">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="btn btn-sm btn-danger">
-                                            <i class="fas fa-trash"></i>
+                                            <i class="fas fa-user-slash"></i>
                                         </button>
                                     </form>
                                     @endif
@@ -55,7 +63,7 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="5" class="text-center">Tidak ada data pengguna</td>
+                            <td colspan="6" class="text-center">Tidak ada data pengguna</td>
                         </tr>
                         @endforelse
                     </tbody>

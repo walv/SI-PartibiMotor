@@ -33,7 +33,7 @@
             <tr>
                 <td>{{ $loop->iteration }}</td>
                 <td>{{ $service->name }}</td>
-                <td>Rp {{ number_format($service->harga, 0, ',', '.') }}</td>
+                <td>Rp {{ number_format($service->price, 0, ',', '.') }}</td>
                 <td>
                     <a href="{{ route('services.edit', $service->id) }}" class="btn btn-warning btn-sm">
                         <i class="fas fa-edit"></i> Edit

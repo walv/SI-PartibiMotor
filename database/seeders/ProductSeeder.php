@@ -9,61 +9,49 @@ class ProductSeeder extends Seeder
 {
     public function run()
     {
-        // Data produk untuk bengkel umum
-        $products = [
-            [
-                'name' => 'Kampas Rem Depan',
-                'brand' => 'Yamaha', // Merek
-                'category_id' => 1,  // ID Kategori Produk
-                'cost_price' => 25000, // Harga Modal
-                'selling_price' => 35000, // Harga Jual
-                'stock' => 100, // Jumlah Stok
-            ],
-            [
-                'name' => 'Kampas Rem Belakang',
-                'brand' => 'Shell', // Merek
-                'category_id' => 1,  // ID Kategori Produk
-                'cost_price' => 22000,
-                'selling_price' => 32000,
-                'stock' => 50,
-            ],
-            [
-                'name' => 'Rantai Sepeda Motor',
-                'brand' => null, // Tanpa merek (Produk KW)
-                'category_id' => 2,  // ID Kategori Produk
-                'cost_price' => 50000,
-                'selling_price' => 65000,
-                'stock' => 200,
-            ],
-            [
-                'name' => 'Busi NGK',
-                'brand' => 'NGK', // Merek
-                'category_id' => 3,  // ID Kategori Produk
-                'cost_price' => 15000,
-                'selling_price' => 20000,
-                'stock' => 120,
-            ],
-            [
-                'name' => 'Cairan Pendingin Radiator',
-                'brand' => 'No Brand', // Tanpa merek
-                'category_id' => 4,  // ID Kategori Produk
-                'cost_price' => 18000,
-                'selling_price' => 25000,
-                'stock' => 75,
-            ],
-            [
-                'name' => 'Ban Motor',
-                'brand' => 'IRC', // Merek
-                'category_id' => 5,  // ID Kategori Produk
-                'cost_price' => 180000,
-                'selling_price' => 250000,
-                'stock' => 50,
-            ],
-        ];
+        $products = [];
+        $brands = ['Yamaha', 'Honda', 'Suzuki', 'Kawasaki', 'No Brand'];
+        $categories = [1, 2, 3, 4, 5];
 
-        // Loop untuk menyimpan data produk ke dalam tabel products
+        // Generate 25 produk untuk masing-masing huruf A, B, C, D
+        foreach (range(1, 25) as $i) {
+            $products[] = [
+                'name' => "Aksesoris Motor $i",
+                'brand' => $brands[array_rand($brands)],
+                'category_id' => $categories[array_rand($categories)],
+                'cost_price' => rand(10000, 50000),
+                'selling_price' => rand(60000, 150000),
+                'stock' => rand(10, 100),
+            ];
+            $products[] = [
+                'name' => "Baut Motor $i",
+                'brand' => $brands[array_rand($brands)],
+                'category_id' => $categories[array_rand($categories)],
+                'cost_price' => rand(1000, 5000),
+                'selling_price' => rand(6000, 20000),
+                'stock' => rand(10, 100),
+            ];
+            $products[] = [
+                'name' => "Cairan Pembersih $i",
+                'brand' => $brands[array_rand($brands)],
+                'category_id' => $categories[array_rand($categories)],
+                'cost_price' => rand(5000, 20000),
+                'selling_price' => rand(25000, 50000),
+                'stock' => rand(10, 100),
+            ];
+            $products[] = [
+                'name' => "Disk Brake $i",
+                'brand' => $brands[array_rand($brands)],
+                'category_id' => $categories[array_rand($categories)],
+                'cost_price' => rand(20000, 80000),
+                'selling_price' => rand(90000, 200000),
+                'stock' => rand(10, 100),
+            ];
+        }
+
+        // Simpan ke database
         foreach ($products as $product) {
-            Product::create($product);
+            \App\Models\Product::create($product);
         }
     }
 }

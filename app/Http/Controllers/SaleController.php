@@ -80,7 +80,11 @@ class SaleController extends Controller
             if (!empty($request->products)) {
                 foreach ($request->products as $product) {
                     $productModel = Product::findOrFail($product['id']);
-    
+     // CEK STOK CUKUP
+        if ($productModel->stock < $product['quantity']) {
+            DB::rollBack();
+            return back()->with('error', "Stok {$productModel->name} tidak cukup!");
+        }
                     $subtotal = $productModel->selling_price * $product['quantity'];
     
                     // Simpan detail penjualan
@@ -143,8 +147,8 @@ class SaleController extends Controller
     
                     // Gunakan harga dari database jika harga tidak dikirim dari form
                     $price = (isset($service['price']) && $service['price'] > 0) ?
-                        $service['price'] : $serviceModel->harga;
-    
+                        $service['price'] : $serviceModel->price;
+                    // Hitung subtotal untuk jasa
                     $subtotal = $price * 1;
     
                     SaleServiceDetail::create([

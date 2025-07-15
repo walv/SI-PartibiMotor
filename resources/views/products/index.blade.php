@@ -100,9 +100,9 @@
                 </table>
             </div>
 
-            <div class="mt-3">
-                {{ $products->withQueryString()->links() }}
-            </div>
+           <div class="mt-3">
+    {{ $products->withQueryString()->links('pagination::bootstrap-4')->with('class', 'pagination-sm') }}
+</div>
         </div>
     </div>
 </div>

@@ -100,6 +100,19 @@ class ProductController extends Controller
 
     public function destroy(Product $product)
     {
+        // Cek apakah produk memiliki transaksi terkait
+    $hasTransactions = 
+        $product->saleDetails()->exists() ||
+        $product->purchaseDetails()->exists() ||
+        $product->salesAggregates()->exists() ||
+        $product->forecastSES()->exists() ||
+        $product->inventoryMovements()->exists();
+
+    if ($hasTransactions) {
+        return redirect()->route('products.index')
+            ->with('error', 'Produk tidak bisa dihapus karena memiliki produk ini memiliki data yang berkaitan dengan transaksi!');
+    }
+        // Hapus produk jika tidak ada transaksi terkait
         $product->delete();
 
         return redirect()->route('products.index')
