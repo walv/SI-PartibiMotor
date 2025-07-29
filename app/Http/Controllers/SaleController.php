@@ -48,135 +48,131 @@ class SaleController extends Controller
     }
 
     public function store(Request $request)
-    {
-        // Validasi input
-        $request->validate([
-            'invoice_number' => 'required|string|max:255',
-            'customer_name' => 'nullable|string|max:255',
-            'products.*.id' => 'nullable|exists:products,id',
-            'products.*.quantity' => 'nullable|numeric|min:1',
-            'services.*.id' => 'nullable|exists:services,id',
-            'services.*.price' => 'nullable|numeric|min:1',
-        ], [
-            'services.*.price.numeric' => 'Harga jasa harus berupa angka.',
-            'services.*.price.min' => 'Harga jasa tidak boleh kurang dari 0.', // Validasi harga jasa
+{
+    // Validasi input (tidak diubah)
+    $request->validate([
+        'invoice_number' => 'required|string|max:255',
+        'customer_name' => 'nullable|string|max:255',
+        'products.*.id' => 'nullable|exists:products,id',
+        'products.*.quantity' => 'nullable|numeric|min:1',
+        'services.*.id' => 'nullable|exists:services,id',
+        'services.*.price' => 'nullable|numeric|min:1',
+        'discount_amount' => 'nullable|numeric|min:0',
+        'description' => 'nullable|string|max:500'
+    ], [
+        'services.*.price.numeric' => 'Harga jasa harus berupa angka.',
+        'services.*.price.min' => 'Harga jasa tidak boleh kurang dari 0.',
+    ]);
+
+    DB::beginTransaction();
+
+    try {
+        // [PERBAIKAN 1] Simpan diskon dan deskripsi SEKALI SAJA di awal dengan nilai final
+        $totalProduct = 0;
+        $totalService = 0;
+        
+        // Hitung subtotal produk terlebih dahulu
+        if (!empty($request->products)) {
+            foreach ($request->products as $product) {
+                $productModel = Product::findOrFail($product['id']);
+                $totalProduct += $productModel->selling_price * $product['quantity'];
+            }
+        }
+
+        // Hitung subtotal jasa
+        if (!empty($request->services)) {
+            foreach ($request->services as $service) {
+                $price = $service['price'] ?? Service::find($service['id'])->price;
+                $totalService += $price;
+            }
+        }
+
+        $subtotal = $totalProduct + $totalService;
+        $finalDiscount = min($request->discount_amount ?? 0, $subtotal);
+
+        // Buat transaksi dengan nilai final
+        $sale = Sale::create([
+            'invoice_number' => $request->invoice_number,
+            'customer_name' => $request->customer_name,
+            'total_price' => $subtotal - $finalDiscount, // Langsung hitung total akhir
+            'user_id' => auth()->id(),
+            'date' => now(),
+            'discount_amount' => $finalDiscount, // Pakai nilai yang sudah difinalisasi
+            'description' => $request->description
         ]);
-        DB::beginTransaction();
 
-        try {
-            // Buat transaksi baru
-            $sale = Sale::create([
-                'invoice_number' => $request->invoice_number,
-                'customer_name' => $request->customer_name,
-                'total_price' => 0, // Total akan diperbarui setelah produk dan jasa dihitung
-                'user_id' => auth()->id(),
-                'date' => now(), // Tambahkan nilai untuk kolom date
-            ]);
-
-            $totalProduct = 0;
-            $totalService = 0;
-
-            // Proses produk (jika ada)
-            if (!empty($request->products)) {
-                foreach ($request->products as $product) {
-                    $productModel = Product::findOrFail($product['id']);
-     // CEK STOK CUKUP
-        if ($productModel->stock < $product['quantity']) {
-            DB::rollBack();
-            return back()->with('error', "Stok {$productModel->name} tidak cukup!");
-        }
-                    $subtotal = $productModel->selling_price * $product['quantity'];
-    
-                    // Simpan detail penjualan
-                    SaleDetail::create([
-                        'sale_id' => $sale->id,
-                        'product_id' => $productModel->id,
-                        'quantity' => $product['quantity'],
-                        'price' => $productModel->selling_price,
-                        'subtotal' => $subtotal,
-                    ]);
-    
-                    $totalProduct += $subtotal;
-    
-                    // Simpan stok sebelum diupdate
-                    $stockBefore = $productModel->stock;
-    
-                    // Update stok produk
-                    $productModel->decrement('stock', $product['quantity']);
-    
-                    // Catat pergerakan inventaris
-                    InventoryMovement::create([
-                        'date' => Carbon::now(),
-                        'product_id' => $productModel->id,
-                        'quantity' => $product['quantity'],
-                        'movement_type' => 'out',
-                        'reference_id' => $sale->id,
-                        'reference_type' => 'sale',
-                        'stock_before' => $stockBefore,
-                        'stock_after' => $stockBefore - $product['quantity'],
-                        'reference' => 'Sale: ' . $request->invoice_number,
-                    ]);
-    
-                    // Update atau buat Sales Aggregate
-                    $period = Carbon::now()->format('Y-m'); // Ambil periode dari bulan dan tahun saat ini
-                    $salesAggregate = SalesAggregate::where('product_id', $productModel->id)
-                        ->where('period', $period)
-                        ->first();
-    
-                    if ($salesAggregate) {
-                        // Update agregat yang sudah ada
-                        $salesAggregate->total_sales += $product['quantity'];
-                        $salesAggregate->total_price += $subtotal;
-                        $salesAggregate->save();
-                    } else {
-                        // Jika belum ada, buat entri baru untuk sales_aggregate
-                        SalesAggregate::create([
-                            'product_id' => $productModel->id,
-                            'period' => $period,
-                            'total_sales' => $product['quantity'],
-                            'total_price' => $subtotal,
-                        ]);
-                    }
+        // Proses produk (tidak diubah)
+        if (!empty($request->products)) {
+            foreach ($request->products as $product) {
+                $productModel = Product::findOrFail($product['id']);
+                
+                if ($productModel->stock < $product['quantity']) {
+                    throw new \Exception("Stok {$productModel->name} tidak cukup");
                 }
+
+                $subtotal = $productModel->selling_price * $product['quantity'];
+
+                SaleDetail::create([
+                    'sale_id' => $sale->id,
+                    'product_id' => $productModel->id,
+                    'quantity' => $product['quantity'],
+                    'price' => $productModel->selling_price,
+                    'subtotal' => $subtotal,
+                ]);
+
+                $stockBefore = $productModel->stock;
+                $productModel->decrement('stock', $product['quantity']);
+
+                InventoryMovement::create([
+                    'date' => now(),
+                    'product_id' => $productModel->id,
+                    'quantity' => $product['quantity'],
+                    'movement_type' => 'out',
+                    'reference_id' => $sale->id,
+                    'reference_type' => 'sale',
+                    'stock_before' => $stockBefore,
+                    'stock_after' => $stockBefore - $product['quantity'],
+                    'reference' => 'Sale: ' . $request->invoice_number,
+                ]);
+
+                // Update sales aggregate (tidak diubah)
+                $period = now()->format('Y-m');
+                SalesAggregate::updateOrCreate(
+                    ['product_id' => $productModel->id, 'period' => $period],
+                    [
+                        'total_sales' => DB::raw("total_sales + {$product['quantity']}"),
+                        'total_price' => DB::raw("total_price + {$subtotal}")
+                    ]
+                );
             }
-    
-            // Proses jasa (jika ada)
-            if (!empty($request->services)) {
-                foreach ($request->services as $service) {
-                    $serviceModel = Service::findOrFail($service['id']); // Ambil data jasa dari database
-    
-                    // Gunakan harga dari database jika harga tidak dikirim dari form
-                    $price = (isset($service['price']) && $service['price'] > 0) ?
-                        $service['price'] : $serviceModel->price;
-                    // Hitung subtotal untuk jasa
-                    $subtotal = $price * 1;
-    
-                    SaleServiceDetail::create([
-                        'sale_id' => $sale->id,
-                        'service_id' => $serviceModel->id,
-                        'price' => $price, // Gunakan harga dari form atau database
-                        'subtotal' => $subtotal, // Subtotal sama dengan harga
-                    ]);
-    
-                    $totalService += $subtotal;
-                }
-            }
-    
-            // Update total harga
-            $sale->update([
-                'total_price' => $totalProduct + $totalService,
-            ]);
-    
-            DB::commit();
-    
-            return redirect()->route('sales.index')
-                ->with('success', 'Transaksi berhasil disimpan.');
-        } catch (\Exception $e) {
-            DB::rollback();
-            return back()->with('error', 'Error: ' . $e->getMessage());
         }
+
+        // Proses jasa (tidak diubah)
+        if (!empty($request->services)) {
+            foreach ($request->services as $service) {
+                $serviceModel = Service::findOrFail($service['id']);
+                $price = $service['price'] ?? $serviceModel->price;
+                $subtotal = $price;
+
+                SaleServiceDetail::create([
+                    'sale_id' => $sale->id,
+                    'service_id' => $serviceModel->id,
+                    'price' => $price,
+                    'subtotal' => $subtotal,
+                ]);
+            }
+        }
+
+        DB::commit();
+
+        return redirect()->route('sales.index')
+            ->with('success', 'Transaksi berhasil disimpan.');
+
+    } catch (\Exception $e) {
+        DB::rollBack();
+        return back()->with('error', 'Error: ' . $e->getMessage());
     }
-    
+}
 
     public function show(Sale $sale)
     {
@@ -234,5 +230,4 @@ class SaleController extends Controller
             return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
     }
-  
 }

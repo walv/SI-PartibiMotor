@@ -1,133 +1,150 @@
 @extends('layouts.app')
 
+@section('title', 'Form Peramalan SES')
+
 @section('content')
 <div class="container">
-    <div class="card">
-        <div class="card-header">
-            <h5>Single Exponential Smoothing (SES)</h5>
+    <h3>Peramalan Penjualan dengan Single Exponential Smoothing (SES)</h3>
+    @if ($errors->any())
+        <div class="alert alert-danger">
+            <ul class="mb-0">
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
         </div>
-        <div class="card-body">
-            <form action="{{ route('forecast.calculate') }}" method="POST">
-                @csrf
-                <input type="hidden" name="method" value="ses">
-                
-                <div class="form-group">
-                    <label>Pilih Produk</label>
-                    <select name="product_id" class="form-control" required>
-                        @foreach($products as $product)
-                        <option value="{{ $product->id }}">{{ $product->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                
-                <!-- Penjelasan Alpha -->
-                <div class="form-group">
-                    <label>Alpha (α)</label>
-                    <input type="number" name="alpha" class="form-control" 
-                           min="0.01" max="0.99" step="0.01" value="0.3" required>
-                    <small class="form-text text-muted">
-                        Alpha (α) mengontrol seberapa banyak data terbaru mempengaruhi peramalan. 
-                        Pilih nilai yang sesuai dengan pola penjualan Anda:
-                    </small>
-                    <ul class="mt-2">
-                        <li><strong>Alpha rendah (0.1 - 0.3)</strong> - Untuk penjualan yang <strong>stabil</strong> atau tidak banyak fluktuasi.</li>
-                        <li><strong>Alpha sedang (0.4 - 0.6)</strong> - Untuk penjualan yang <strong>fluktuatif</strong> namun tidak terlalu drastis.</li>
-                        <li><strong>Alpha tinggi (0.7 - 0.9)</strong> - Untuk penjualan yang sangat <strong>fluktuatif</strong> atau sering mengalami perubahan besar.</li>
-                    </ul>
-                </div>
-                
-                <div class="form-group">
-                    <label>Jumlah Periode Forecast</label>
-                    <input type="number" name="forecast_periods" class="form-control" 
-                           min="1" max="12" value="3" required>
-                </div>
+    @endif
 
-                <div class="form-group">
-                    <label for="start_period">Pilih Periode Awal</label>
-                    <input type="month" name="start_period" id="start_period" class="form-control" required>
-                    <small class="form-text text-muted">Klik ikon kalender di samping untuk memilih bulan dan tahun</small>
-                </div>
-                
-                <button type="submit" class="btn btn-primary">Hitung Peramalan</button>
-            </form>
+    {{-- Form produk (GET untuk reload periode) --}}
+    <form action="{{ route('forecast.ses') }}" method="GET" id="productForm" class="mb-4">
+        <div class="form-group">
+            <label for="product_id">Pilih Produk</label>
+            <select name="product_id" id="product_id" class="form-control @error('product_id') is-invalid @enderror" onchange="document.getElementById('productForm').submit()">
+                <option value="">-- Pilih Produk --</option>
+                @foreach($products as $product)
+                <option value="{{ $product->id }}" {{ (old('product_id', $selectedProductId ?? '') == $product->id) ? 'selected' : '' }}>
+                    {{ $product->name }} ({{ $product->category->name ?? 'Kategori' }})
+                </option>
+                @endforeach
+            </select>
+            @error('product_id')
+                <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
+            <small class="form-text text-muted">Pilih produk yang ingin diramalkan.</small>
+        </div>
+    </form>
 
-            @if(isset($result))
-            <div class="mt-4">
-                <h5>Hasil Peramalan</h5>
-                <canvas id="forecastChart"></canvas>
-                
-                <table class="table table-bordered mt-3">
-                    <thead>
-                        <tr>
-                            <th>Periode</th>
-                            <th>Data Aktual</th>
-                            <th>Hasil Peramalan</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach($result['actual'] as $index => $actual)
-                        <tr>
-                            <td>{{ $index + 1 }}</td>
-                            <td>{{ $actual }}</td>
-                            <td>{{ number_format($result['fitted'][$index], 2) }}</td>
-                        </tr>
-                        @endforeach
-                        @foreach($result['forecast'] as $index => $fc)
-                        <tr>
-                            <td>Peramalan {{ $index + 1 }}</td>
-                            <td>-</td>
-                            <td>{{ number_format($fc, 2) }}</td>
-                        </tr>
-                        @endforeach
-                    </tbody>
-                </table>
+    {{-- Form utama peramalan --}}
+    <form action="{{ route('forecast.calculate') }}" method="POST" id="sesForm">
+        @csrf
+        <input type="hidden" name="method" value="ses">
+        <input type="hidden" name="product_id" value="{{ old('product_id', $selectedProductId ?? '') }}">
 
-                <!-- Menampilkan MAPE, MAE, dan RMSE -->
-                <div class="mt-4">
-                    <h6>Metrik Evaluasi:</h6>
-                    <ul>
-                        <li><strong>MAPE:</strong> {{ number_format($metrics['mape'], 2) }}%</li>
-                        <li><strong>MAE:</strong> {{ number_format($metrics['mae'], 2) }}</li>
-                        <li><strong>RMSE:</strong> {{ number_format($metrics['rmse'], 2) }}</li>
-                    </ul>
-                </div>
-            </div>
+        {{-- Pilih Periode Awal --}}
+        <div class="form-group">
+            <label for="start_period">Periode Awal Data Historis</label>
+            <select name="start_period" id="start_period" class="form-control @error('start_period') is-invalid @enderror" {{ empty($availablePeriods) ? 'disabled' : '' }}>
+                <option value="">-- Pilih Periode Awal --</option>
+                @foreach($availablePeriods as $period)
+                    <option value="{{ $period }}" {{ old('start_period') == $period ? 'selected' : '' }}>
+                        {{ \Carbon\Carbon::parse($period.'-01')->format('M Y') }}
+                    </option>
+                @endforeach
+            </select>
+            @error('start_period')
+                <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
+            @if(empty($availablePeriods) && (old('product_id') || $selectedProductId))
+                <small class="text-danger">Tidak ada data penjualan untuk produk ini.</small>
             @endif
+            <small class="form-text text-muted">Pilih periode awal data historis yang akan digunakan untuk peramalan.</small>
         </div>
-    </div>
+
+        {{-- Pilih Periode Akhir --}}
+        <div class="form-group">
+            <label for="end_period">Periode Akhir Data Historis</label>
+            <select name="end_period" id="end_period" class="form-control @error('end_period') is-invalid @enderror" {{ empty($availablePeriods) ? 'disabled' : '' }}>
+                <option value="">-- Pilih Periode Akhir --</option>
+                @foreach($availablePeriods as $period)
+                    <option value="{{ $period }}" {{ old('end_period', end($availablePeriods)) == $period ? 'selected' : '' }}>
+                        {{ \Carbon\Carbon::parse($period.'-01')->format('M Y') }}
+                    </option>
+                @endforeach
+            </select>
+            @error('end_period')
+                <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
+            <small class="form-text text-muted">Pilih periode akhir data historis yang akan digunakan untuk peramalan (≥ periode awal).</small>
+        </div>
+
+        {{-- Pilihan Mode Alpha --}}
+        <div class="form-group mt-3">
+            <label>Mode Alpha</label><br>
+            @php
+                $alphaModeOld = old('alpha_mode', 'auto');
+            @endphp
+            <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" name="alpha_mode" id="alpha_auto" value="auto" {{ $alphaModeOld == 'auto' ? 'checked' : '' }}>
+                <label class="form-check-label" for="alpha_auto">Alpha Terbaik Otomatis</label>
+            </div>
+            <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" name="alpha_mode" id="alpha_manual_radio" value="manual" {{ $alphaModeOld == 'manual' ? 'checked' : '' }}>
+                <label class="form-check-label" for="alpha_manual_radio">Alpha Manual</label>
+            </div>
+            @error('alpha_mode')
+                <div class="text-danger">{{ $message }}</div>
+            @enderror
+        </div>
+
+        {{-- Input Nilai Alpha Manual --}}
+        <div class="form-group mt-2">
+            <label for="alpha_manual">Masukkan Nilai Alpha (0.01 - 0.99)</label>
+            <input 
+                type="number" 
+                step="0.01" min="0.01" max="0.99" 
+                name="alpha_manual" id="alpha_manual"
+                class="form-control @error('alpha_manual') is-invalid @enderror"
+                value="{{ old('alpha_manual') }}"
+                {{ $alphaModeOld != 'manual' ? 'disabled' : '' }}
+            >
+            @error('alpha_manual')
+                <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
+            <small class="form-text text-muted">Nilai alpha mengatur sensitivitas model terhadap data terbaru. Jika bingung, pilih mode otomatis.</small>
+        </div>
+
+        {{-- Jumlah Periode Forecast --}}
+        <div class="form-group mt-4">
+            <label for="forecast_periods">Jumlah Periode Ramalan ke Depan</label>
+            <input type="number" name="forecast_periods" id="forecast_periods" class="form-control @error('forecast_periods') is-invalid @enderror" min="1" max="24" value="{{ old('forecast_periods', 3) }}">
+            @error('forecast_periods')
+                <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
+            <small class="form-text text-muted">Masukkan jumlah bulan yang ingin diramalkan ke depan (maksimal 24 bulan).</small>
+        </div>
+
+        {{-- Tombol Submit --}}
+        <button type="submit" class="btn btn-primary mt-3">Hitung Peramalan</button>
+    </form>
 </div>
 
-@if ($errors->any())
-<div class="alert alert-danger mt-3">
-    <ul class="mb-0">
-        @foreach ($errors->all() as $error)
-            <li>{{ $error }}</li>
-        @endforeach
-    </ul>
-</div>
-@endif
-
-@if(isset($chartData))
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    const ctx = document.getElementById('forecastChart').getContext('2d');
-    new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: @json($chartData['labels']),
-            datasets: [{
-                label: 'Data Aktual',
-                data: @json($chartData['actual']),
-                borderColor: 'rgb(75, 192, 192)',
-                tension: 0.1
-            }, {
-                label: 'Hasil Peramalan',
-                data: @json($chartData['forecast']),
-                borderColor: 'rgb(255, 99, 132)',
-                tension: 0.1
-            }]
+    function updateAlphaInput() {
+        const manualRadio = document.getElementById('alpha_manual_radio');
+        const alphaInput = document.getElementById('alpha_manual');
+        if (manualRadio.checked) {
+            alphaInput.disabled = false;
+        } else {
+            alphaInput.disabled = true;
+            alphaInput.value = '';
         }
+    }
+
+    // Inisialisasi kondisi input alpha manual saat halaman selesai dimuat
+    document.addEventListener('DOMContentLoaded', function() {
+        updateAlphaInput();
+        document.getElementById('alpha_auto').addEventListener('change', updateAlphaInput);
+        document.getElementById('alpha_manual_radio').addEventListener('change', updateAlphaInput);
     });
 </script>
-@endif
 @endsection

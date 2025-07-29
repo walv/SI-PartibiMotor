@@ -145,8 +145,9 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::get('/forecast/ses', [ForecastController::class, 'ses'])->name('forecast.ses'); // Untuk SES
     Route::post('/forecast/calculate', [ForecastController::class, 'calculate'])->name('forecast.calculate');
     Route::get('/forecast/result', [ForecastController::class, 'result'])->name('forecast.result'); // Jika diperlukan
-
-     Route::resource('users', UserController::class)->except(['show']);
+Route::get('/forecast/print/{product_id}', [ForecastController::class, 'printPDF'])->name('forecast.print');
+   
+Route::resource('users', UserController::class)->except(['show']);
     
   Route::get('/users/trashed', [UserController::class, 'trashed'])->name('users.trashed');
     Route::post('/users/{id}/restore', [UserController::class, 'restore'])->name('users.restore');

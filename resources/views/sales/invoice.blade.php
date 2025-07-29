@@ -96,6 +96,10 @@
                                     <td class="text-right">Rp {{ number_format($sale->saleServiceDetails->sum('subtotal'), 0, ',', '.') }}</td>
                                 </tr>
                                 @endif
+                                <tr>
+                                    <th>Total Diskon:</th>
+                                    <td class="text-right">Rp {{ number_format($sale->discount_amount, 0, ',', '.') }}</td>
+                                </tr>
                                 <tr class="font-weight-bold">
                                     <th>TOTAL PEMBAYARAN:</th>
                                     <td class="text-right">Rp {{ number_format($sale->total_price, 0, ',', '.') }}</td>
@@ -126,28 +130,58 @@
 
 <style>
     @media print {
+        /* Sembunyikan semua elemen di luar konten utama */
         body * {
             visibility: hidden;
         }
+
         .card, .card * {
             visibility: visible;
         }
+
         .card {
             position: absolute;
-            left: 0;
             top: 0;
-            width: 100%;
-            margin: 0;
-            padding: 0;
-            box-shadow: none;
+            left: 0;
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            box-shadow: none !important;
         }
-        .btn {
+
+        /* Hapus margin dan padding yang bisa memicu page break */
+        .container, .row, .col-*, .card-body {
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
+        .table {
+            margin-bottom: 0 !important;
+        }
+
+        .btn, .text-center button, .text-center a {
             display: none !important;
         }
+
         @page {
-            size: auto;
+            size: A4 portrait;
             margin: 5mm;
         }
+
+        html, body {
+            height: auto !important;
+            overflow: hidden;
+        }
+    }
+
+    /* Opsional: Kurangi spacing di luar mode print juga */
+    .card-body {
+        padding: 1rem;
+    }
+
+    .table th, .table td {
+        padding: 0.4rem 0.6rem;
+        font-size: 14px;
     }
 </style>
 @endsection

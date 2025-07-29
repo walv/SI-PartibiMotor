@@ -17,9 +17,13 @@ class CategorySeeder extends Seeder
             'Sparepart Mesin',
             'Sparepart Kelistrikan',
             'Sparepart Rangka',
-            'Aksesoris',
+            'Body & Aksesoris',
             'Ban',
+            'Suspensi & Kaki-kaki',
             'Helm',
+            'grease',
+            'sistem pengapian',
+            'sistem bahan bakar',
             'Lain-lain',
         ];
 

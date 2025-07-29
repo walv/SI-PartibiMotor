@@ -105,7 +105,7 @@
                                         class="d-flex align-items-center text-decoration-none dropdown-toggle"
                                         id="dropdownUser1" data-bs-toggle="dropdown" aria-expanded="false">
                                         <i class="fas fa-user-circle me-2"></i>
-                                        <strong>{{ Auth::user()->name ?? 'User' }}</strong>
+                                        <strong>{{ Auth::user()->username ?? 'User' }}</strong>
                                     </a>
                                     <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="dropdownUser1">
                                         @if (Route::has('change.password'))

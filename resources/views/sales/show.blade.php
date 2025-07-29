@@ -61,6 +61,9 @@
                                 <td>Rp {{ number_format($sale->saleServiceDetails->sum('subtotal'), 0, ',', '.') }}</td>
                             </tr>
                             @endif
+                            <tr>
+                                <th>Total Diskon:</th>
+                                <td>Rp {{ number_format($sale->discount_amount, 0, ',', '.') }}</td>   
                             <tr class="font-weight-bold">
                                 <th>Total Pembayaran:</th>
                                 <td>Rp {{ number_format($sale->total_price, 0, ',', '.') }}</td>
