@@ -16,6 +16,8 @@ class Purchase extends Model
         'supplier_name',
         'date',
         'total_price',
+        'notes',          // Kolom baru untuk catatan
+        'photo_struk',    // Kolom baru untuk foto struk
     ];
 
     // Menambahkan properti $dates untuk kolom datetime

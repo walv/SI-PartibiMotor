@@ -63,12 +63,11 @@
                     </div>
                     <div class="mb-3">
                         <label for="role" class="form-label">Role</label>
-                        <select class="form-select @error('role') is-invalid @enderror" id="role" name="role"
-                            required>
-                            <option value="">Pilih Role</option>
-                            <option value="kasir" {{ old('role', $user->role) == 'kasir' ? 'selected' : '' }}>Kasir
-                            </option>
-                        </select>
+                        <select class="form-select @error('role') is-invalid @enderror" id="role" name="role" required>
+    <option value="">Pilih Role</option>
+    <option value="admin" {{ old('role', $user->role) == 'admin' ? 'selected' : '' }}>Admin</option>
+    <option value="kasir" {{ old('role', $user->role) == 'kasir' ? 'selected' : '' }}>Kasir</option>
+</select>
                         @error('role')
                             <div class="invalid-feedback">
                                 {{ $message }}

@@ -176,44 +176,19 @@
         </div>
     </div>
 </div>
-
-<div class="row mb-4">
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header bg-primary text-white">
-                <h5 class="mb-0">Export Laporan Penjualan</h5>
-            </div>
-            <div class="card-body">
-                <form action="{{ route('reports.sales.export') }}" method="GET">
-                    <input type="hidden" name="type" value="sales">
-                    <div class="mb-3">
-                        <label for="month" class="form-label">Bulan</label>
-                        <select name="month" id="month" class="form-select" required>
-                            @for ($i = 1; $i <= 12; $i++)
-                                <option value="{{ $i }}" {{ $i == $startDate->month ? 'selected' : '' }}>
-                                    {{ date('F', mktime(0, 0, 0, $i, 1)) }}
-                                </option>
-                            @endfor
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label for="year" class="form-label">Tahun</label>
-                        <select name="year" id="year" class="form-select" required>
-                            @for ($i = date('Y'); $i >= 2000; $i--)
-                                <option value="{{ $i }}" {{ $i == $startDate->year ? 'selected' : '' }}>
-                                    {{ $i }}
-                                </option>
-                            @endfor
-                        </select>
-                    </div>
-                    <button type="submit" class="btn btn-success">
-                        <i class="fas fa-file-excel me-2"></i> Export Excel
-                    </button>
-                </form>
-            </div>
-        </div>
+ <div class="float-end">
+    <div class="btn-group">
+        <a href="{{ route('reports.sales.export', [
+            'start_date' => $startDate->format('Y-m-d'),
+            'end_date' => $endDate->format('Y-m-d')
+        ]) }}" class="btn btn-success btn-sm">
+            <i class="fas fa-file-excel"></i> Export Excel
+        </a>
+        <button class="btn btn-primary btn-sm ms-2" onclick="window.print()">
+            <i class="fas fa-print"></i> Cetak
+        </button>
     </div>
-</div>
+
 </div>
 
 @endsection

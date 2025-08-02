@@ -9,6 +9,7 @@ use App\Models\InventoryMovement;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class PurchaseController extends Controller
 {
@@ -44,6 +45,8 @@ class PurchaseController extends Controller
 
     public function store(Request $request)
     {
+
+       
         $request->validate([
             'invoice_number' => 'required|unique:purchases',
             'supplier_name' => 'required|string|max:255',
@@ -51,11 +54,20 @@ class PurchaseController extends Controller
             'products.*.id' => 'required|exists:products,id',
             'products.*.quantity' => 'required|integer|min:1',
             'products.*.price' => 'required|numeric|min:0',
+            'notes' => 'nullable|string',
+        'photo_struk' => 'nullable|image|mimes:jpeg,png,jpg|max:2048'
         ]);
 
         DB::beginTransaction();
         try {
             $totalPrice = 0;
+
+            // menangani foto struk jika ada
+            $photoPath = null;
+            if ($request->hasFile('photo_struk')) {
+                $photoPath = $request->file('photo_struk')->store('photo_struk', 'public');
+            }
+
             // Buat pembelian produk untuk stok barang
             $purchase = Purchase::create([
                 'invoice_number' => $request->invoice_number,
@@ -63,6 +75,8 @@ class PurchaseController extends Controller
                 'supplier_name' => $request->supplier_name,
                 'total_price' => 0,
                 'user_id' => auth()->id(),
+                'notes' => $request->notes,
+                'photo_struk' => $photoPath
             ]);
 
             // Proses tiap produk
@@ -122,7 +136,10 @@ class PurchaseController extends Controller
     public function show(Purchase $purchase)
     {
         $purchase->load(['purchaseDetails.product', 'user']);
-        return view('purchases.show', compact('purchase'));
+    return view('purchases.show', [
+        'purchase' => $purchase,
+        'hasPhoto' => !empty($purchase->photo_struk) // Flag untuk tampilan
+    ]);
     }
 
     public function destroy(Purchase $purchase)

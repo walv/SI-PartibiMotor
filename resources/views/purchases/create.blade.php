@@ -33,7 +33,7 @@
                 </div>
             @endif
 
-            <form action="{{ route('purchases.store') }}" method="POST" id="purchaseForm">
+            <form action="{{ route('purchases.store') }}" method="POST" id="purchaseForm" enctype="multipart/form-data">
                 @csrf
                 <div class="row">
                     <div class="col-md-8">
@@ -45,7 +45,9 @@
                                 <div class="row mb-3">
                                     <div class="col-md-6">
                                         <label for="invoice_number" class="form-label">Nomor Invoice</label>
-                                        <input type="text" class="form-control @error('invoice_number') is-invalid @enderror" id="invoice_number" name="invoice_number" value="{{ old('invoice_number', $invoice) }}" readonly>
+                                        <input type="text" class="form-control @error('invoice_number') is-invalid @enderror" 
+                                            id="invoice_number" name="invoice_number" 
+                                            value="{{ old('invoice_number', $invoice) }}" readonly>
                                         @error('invoice_number')
                                         <div class="invalid-feedback">
                                             {{ $message }}
@@ -54,8 +56,34 @@
                                     </div>
                                     <div class="col-md-6">
                                         <label for="supplier_name" class="form-label">Nama Supplier</label>
-                                        <input type="text" class="form-control @error('supplier_name') is-invalid @enderror" id="supplier_name" name="supplier_name" value="{{ old('supplier_name') }}" required>
+                                        <input type="text" class="form-control @error('supplier_name') is-invalid @enderror" 
+                                            id="supplier_name" name="supplier_name" 
+                                            value="{{ old('supplier_name') }}" required>
                                         @error('supplier_name')
+                                        <div class="invalid-feedback">
+                                            {{ $message }}
+                                        </div>
+                                        @enderror
+                                    </div>
+                                </div>
+
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="notes" class="form-label">Catatan (Opsional)</label>
+                                        <textarea name="notes" id="notes" class="form-control @error('notes') is-invalid @enderror" 
+                                            rows="2">{{ old('notes') }}</textarea>
+                                        @error('notes')
+                                        <div class="invalid-feedback">
+                                            {{ $message }}
+                                        </div>
+                                        @enderror
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="photo_struk" class="form-label">Foto Struk (Opsional)</label>
+                                        <input type="file" name="photo_struk" id="photo_struk" 
+                                            class="form-control @error('photo_struk') is-invalid @enderror">
+                                        <small class="text-muted">Format: JPG/PNG, maksimal 2MB</small>
+                                        @error('photo_struk')
                                         <div class="invalid-feedback">
                                             {{ $message }}
                                         </div>
@@ -291,7 +319,6 @@
     function calculateTotal() {
         let totalPayment = 0;
         
-        // Calculate total product price
         $('.product-item').each(function() {
             const counter = $(this).find('.product-quantity').data('counter');
             const quantity = parseInt($(`input[name="products[${counter}][quantity]"]`).val());
@@ -299,12 +326,30 @@
             totalPayment += quantity * price;
         });
         
-        // Update display
         $('#totalPayment').text(`Rp ${formatNumber(totalPayment)}`);
     }
 
     function formatNumber(number) {
         return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
     }
+
+    document.getElementById('purchaseForm').addEventListener('submit', function(e) {
+        const fileInput = document.getElementById('photo_struk');
+        if (fileInput.files.length > 0) {
+            const fileSize = fileInput.files[0].size / 1024 / 1024;
+            if (fileSize > 2) {
+                e.preventDefault();
+                alert('Ukuran file maksimal 2MB');
+                return false;
+            }
+            
+            const validTypes = ['image/jpeg', 'image/png'];
+            if (!validTypes.includes(fileInput.files[0].type)) {
+                e.preventDefault();
+                alert('Format file harus JPG/PNG');
+                return false;
+            }
+        }
+    });
 </script>
 @endsection
