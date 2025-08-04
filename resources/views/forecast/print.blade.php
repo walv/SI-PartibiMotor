@@ -126,6 +126,24 @@ use Carbon\Carbon;
     </table>
     <p class="note">* MSE: Mean Squared Error, MAE: Mean Absolute Error, MAPE: Mean Absolute Percentage Error, RMSE: Root Mean Squared Error</p>
 </div>
+<h6>Akurasi Prediksi:</h6>
+<table border="1" cellpadding="5">
+    <tr>
+        <th width="25%">Metrik</th>
+        <th width="20%">Nilai</th>
+        <th width="55%">Deskripsi</th>
+    </tr>
+    @foreach (['mae', 'mape', 'rmse'] as $metric)
+    <tr>
+        <td>{{ $metricDescriptions[$metric]['nama'] }}</td>
+        <td>{{ number_format($metrics[$metric], 2) }}</td>
+        <td>
+            {{ $metricDescriptions[$metric]['deskripsi'] }}<br>
+            <small><strong>Interpretasi:</strong> {{ $metricDescriptions[$metric]['interpretasi'] }}</small>
+        </td>
+    </tr>
+    @endforeach
+</table>
 @endif
 </body>
 </html>

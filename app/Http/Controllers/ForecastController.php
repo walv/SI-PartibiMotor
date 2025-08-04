@@ -90,7 +90,8 @@ class ForecastController extends Controller
                 'result' => $result,
                 'chartData' => $chartData,
                 'metrics' => $this->calculateMetrics($result),
-                'notification' => $notification
+                'notification' => $notification,
+                'metricDescriptions' => $this->getMetricDescriptions()
             ]);
         } catch (\Exception $e) {
             return redirect()->back()->withErrors(['system_error' => $e->getMessage()])->withInput();
@@ -357,7 +358,8 @@ class ForecastController extends Controller
         'alpha' => $latestForecast->alpha,
         'chartImage' => $chartBase64,
         'createdAt' => $latestForecast->created_at,
-        'metrics' => $metrics // Tambahkan metrik ke view
+        'metrics' => $metrics, // Tambahkan metrik ke view
+        'metricDescriptions' => $this->getMetricDescriptions()
     ]);
 
     return $pdf->download('forecast_report_' . $product->name . '.pdf');
@@ -471,5 +473,25 @@ private function generateChartImage($forecastData)
     return $image;
 }
 
+private function getMetricDescriptions()
+{
+    return [
+        'mae' => [
+            'nama' => 'Rata-Rata Kesalahan (MAE)',
+            'deskripsi' => 'Rata-rata selisih antara prediksi dan penjualan asli. Contoh: MAE = 10 artinya prediksi meleset ±10 unit per bulan.',
+            'interpretasi' => 'Semakin kecil nilainya, semakin akurat.'
+        ],
+        'mape' => [
+            'nama' => 'Persentase Kesalahan (MAPE)',
+            'deskripsi' => 'Rata-rata kesalahan dalam persentase. Contoh: MAPE = 5% artinya prediksi meleset 5% dari penjualan asli.',
+            'interpretasi' => 'Dibawah 10% = Baik, diatas 20% = Kurang akurat.'
+        ],
+        'rmse' => [
+            'nama' => 'Kesalahan Besar (RMSE)',
+            'deskripsi' => 'Menunjukkan seberapa jauh prediksi bisa meleset. Nilai besar berarti ada bulan dengan kesalahan signifikan.',
+            'interpretasi' => 'Fokus pada bulan dengan error tinggi.'
+        ]
+    ];
+}
 
 }

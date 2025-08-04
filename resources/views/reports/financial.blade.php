@@ -125,18 +125,13 @@
         </div>
     </div>
     <div class="float-end">
-    <div class="btn-group">
         <a href="{{ route('reports.financial.export', [
             'start_date' => $startDate->format('Y-m-d'),
             'end_date' => $endDate->format('Y-m-d')
         ]) }}" class="btn btn-success btn-sm">
             <i class="fas fa-file-excel"></i> Export Excel
         </a>
-        <button class="btn btn-primary btn-sm ms-2" onclick="window.print()">
-            <i class="fas fa-print"></i> Cetak
-        </button>
     </div>
-</div>
 </div>
 @endsection
 
