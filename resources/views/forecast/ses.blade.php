@@ -116,7 +116,7 @@
         {{-- Jumlah Periode Forecast --}}
         <div class="form-group mt-4">
             <label for="forecast_periods">Jumlah Periode Ramalan ke Depan</label>
-            <input type="number" name="forecast_periods" id="forecast_periods" class="form-control @error('forecast_periods') is-invalid @enderror" min="1" max="24" value="{{ old('forecast_periods', 3) }}">
+            <input type="number" name="forecast_periods" id="forecast_periods" class="form-control @error('forecast_periods') is-invalid @enderror" min="1" max="24" value="{{ old('forecast_periods', 1) }}">
             @error('forecast_periods')
                 <div class="invalid-feedback">{{ $message }}</div>
             @enderror

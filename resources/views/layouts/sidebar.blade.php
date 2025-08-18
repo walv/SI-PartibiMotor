@@ -113,14 +113,16 @@
             </a>
         </li>
         
-        @if (auth()->check() && auth()->user()->role == 'admin')
-            <li class="nav-item">
-                <a href="{{ route('sales.exportimport') }}"
-                    class="nav-link {{ request()->routeIs('sales.exportimport') ? 'active' : 'text-white' }}">
-                    <i class="fas fa-file-export me-2"></i>
-                    Export & Import data penjualan
-                </a>
-            </li>
-        @endif
+        {{-- 
+@if (auth()->check() && auth()->user()->role == 'admin')
+    <li class="nav-item">
+        <a href="{{ route('sales.exportimport') }}"
+            class="nav-link {{ request()->routeIs('sales.exportimport') ? 'active' : 'text-white' }}">
+            <i class="fas fa-file-export me-2"></i>
+            Export & Import data penjualan
+        </a>
+    </li>
+@endif
+--}}
     </ul>
 </div>

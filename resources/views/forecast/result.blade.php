@@ -129,7 +129,6 @@
                             <th>MSE</th>
                             <th>MAE</th>
                             <th>MAPE (%)</th>
-                            <th>RMSE</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -137,7 +136,6 @@
                             <td>{{ number_format($metrics['mse'], 2) }}</td>
                             <td>{{ number_format($metrics['mae'], 2) }}</td>
                             <td>{{ number_format($metrics['mape'], 2) }}%</td>
-                            <td>{{ number_format($metrics['rmse'], 2) }}</td>
                         </tr>
                     </tbody>
                 </table>
@@ -159,7 +157,7 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach (['mae', 'mape', 'rmse'] as $metric)
+                @foreach (['mse','mae', 'mape' ] as $metric)
                 <tr>
                     <td>{{ $metricDescriptions[$metric]['nama'] }}</td>
                     <td>{{ number_format($metrics[$metric], 2) }}</td>

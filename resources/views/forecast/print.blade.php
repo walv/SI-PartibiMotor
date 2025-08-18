@@ -112,7 +112,6 @@ use Carbon\Carbon;
                 <th>MSE</th>
                 <th>MAE</th>
                 <th>MAPE (%)</th>
-                <th>RMSE</th>
             </tr>
         </thead>
         <tbody>
@@ -120,11 +119,10 @@ use Carbon\Carbon;
                 <td>{{ $metrics['mse'] }}</td>
                 <td>{{ $metrics['mae'] }}</td>
                 <td>{{ $metrics['mape'] }}</td>
-                <td>{{ $metrics['rmse'] }}</td>
             </tr>
         </tbody>
     </table>
-    <p class="note">* MSE: Mean Squared Error, MAE: Mean Absolute Error, MAPE: Mean Absolute Percentage Error, RMSE: Root Mean Squared Error</p>
+    <p class="note">* MSE: Mean Squared Error, MAE: Mean Absolute Error, MAPE: Mean Absolute Percentage Error</p>
 </div>
 <h6>Akurasi Prediksi:</h6>
 <table border="1" cellpadding="5">
@@ -133,7 +131,7 @@ use Carbon\Carbon;
         <th width="20%">Nilai</th>
         <th width="55%">Deskripsi</th>
     </tr>
-    @foreach (['mae', 'mape', 'rmse'] as $metric)
+    @foreach (['mse', 'mae', 'mape' ] as $metric)
     <tr>
         <td>{{ $metricDescriptions[$metric]['nama'] }}</td>
         <td>{{ number_format($metrics[$metric], 2) }}</td>

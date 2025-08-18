@@ -168,11 +168,11 @@ class ForecastController extends Controller
      */
     private function calculateBestAlpha(array $actualData)
     {
-        $bestAlpha = 0.01;
+        $bestAlpha = 0.1;
         $lowestError = INF;
 
-        // Cari alpha dengan MSE terendah (0.01 - 0.99)
-        for ($alpha = 0.01; $alpha < 1; $alpha += 0.01) {
+        // Cari alpha dengan MSE terendah (0.1 - 0.9)
+        for ($alpha = 0.1; $alpha < 1; $alpha += 0.1) {
             $forecast = $this->calculateSES($actualData, $alpha, 0);
             $mse = $this->calculateMSE($actualData, $forecast['fitted']);
             if ($mse < $lowestError) {
@@ -277,7 +277,7 @@ class ForecastController extends Controller
     }
 
     /**
-     * Menghitung metrik evaluasi forecast (MSE, MAE, MAPE, RMSE)
+     * Menghitung metrik evaluasi forecast (MSE, MAE, MAPE)
      */
     private function calculateMetrics(array $result)
     {
@@ -309,7 +309,6 @@ class ForecastController extends Controller
             'mse'  => $mse_mean,
             'mae'  => $count > 0 ? $mae / $count : 0,
             'mape' => $count > 0 ? ($mape / $count) * 100 : 0,
-            'rmse' => $count > 0 ? sqrt($mse_mean) : 0,
         ];
     }
 
@@ -382,7 +381,6 @@ private function calculateMetricsForPrint($forecastData)
             'mse' => 0,
             'mae' => 0,
             'mape' => 0,
-            'rmse' => 0
         ];
     }
 
@@ -405,7 +403,6 @@ private function calculateMetricsForPrint($forecastData)
         'mse' => number_format($mse_mean, 2),
         'mae' => number_format($mae / $count, 2),
         'mape' => number_format($mape_mean, 2),
-        'rmse' => number_format(sqrt($mse_mean), 2)
     ];
 }
 private function generateChartImage($forecastData)
@@ -476,6 +473,11 @@ private function generateChartImage($forecastData)
 private function getMetricDescriptions()
 {
     return [
+        'mse' => [
+            'nama' => 'Mean Squared Error (MSE)',
+            'deskripsi' => 'Rata-rata kuadrat selisih antara data aktual dan hasil peramalan.',
+            'interpretasi' => 'Semakin kecil nilainya, semakin baik model peramalan.'
+        ],
         'mae' => [
             'nama' => 'Rata-Rata Kesalahan (MAE)',
             'deskripsi' => 'Rata-rata selisih antara prediksi dan penjualan asli. Contoh: MAE = 10 artinya prediksi meleset ±10 unit per bulan.',
@@ -485,12 +487,8 @@ private function getMetricDescriptions()
             'nama' => 'Persentase Kesalahan (MAPE)',
             'deskripsi' => 'Rata-rata kesalahan dalam persentase. Contoh: MAPE = 5% artinya prediksi meleset 5% dari penjualan asli.',
             'interpretasi' => 'Dibawah 10% = Baik, diatas 20% = Kurang akurat.'
-        ],
-        'rmse' => [
-            'nama' => 'Kesalahan Besar (RMSE)',
-            'deskripsi' => 'Menunjukkan seberapa jauh prediksi bisa meleset. Nilai besar berarti ada bulan dengan kesalahan signifikan.',
-            'interpretasi' => 'Fokus pada bulan dengan error tinggi.'
         ]
+        
     ];
 }
 
